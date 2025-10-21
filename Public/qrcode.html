@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WhatsApp QR Pairing | Silent Wolf</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: #000;
+        color: #00ff99;
+        font-family: 'Poppins', sans-serif;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+      }
+
+      h1 {
+        font-size: 2rem;
+        margin-bottom: 20px;
+        text-align: center;
+        text-shadow: 0 0 15px #00ff88;
+      }
+
+      #qr-container {
+        background: rgba(0, 255, 0, 0.08);
+        padding: 20px;
+        border-radius: 20px;
+        box-shadow: 0 0 25px rgba(0, 255, 0, 0.25);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-width: 280px;
+        min-height: 280px;
+        margin: 10px 0;
+      }
+
+      img {
+        width: 280px;
+        height: 280px;
+        border-radius: 10px;
+      }
+
+      #loader {
+        border: 4px solid rgba(0, 255, 0, 0.2);
+        border-top: 4px solid #00ff00;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .btn {
+        margin-top: 15px;
+        padding: 10px 25px;
+        border: 2px solid #00ff00;
+        border-radius: 8px;
+        background: transparent;
+        color: #00ff00;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.3s ease;
+        box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+      }
+
+      .btn:hover {
+        background: #00ff00;
+        color: #000;
+        box-shadow: 0 0 25px #00ff00;
+      }
+
+      .back-btn {
+        margin-top: 15px;
+        padding: 8px 20px;
+        border: 1px solid #00ff00;
+        border-radius: 8px;
+        color: #00ff00;
+        text-decoration: none;
+        transition: 0.3s;
+        font-size: 0.9rem;
+      }
+
+      .back-btn:hover {
+        background: #00ff00;
+        color: #000;
+        box-shadow: 0 0 15px #00ff00;
+      }
+
+      canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: -1;
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        h1 {
+          font-size: 1.5rem;
+        }
+
+        img {
+          width: 220px;
+          height: 220px;
+        }
+
+        .btn {
+          padding: 8px 18px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        h1 {
+          font-size: 1.2rem;
+        }
+
+        .btn,
+        .back-btn {
+          font-size: 0.85rem;
+        }
+
+        #qr-container {
+          min-width: 200px;
+          min-height: 200px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="background"></canvas>
+    <h1>Generate WhatsApp QR Code</h1>
+
+    <div id="qr-container">
+      <p style="opacity: 0.7;">Click below to generate QR</p>
+    </div>
+
+    <button class="btn" onclick="generateQR()">⚡ Generate QR Code</button>
+    <a href="index.html" class="back-btn">⬅ Back to Home</a>
+
+    <script>
+      // Background particles
+      const canvas = document.getElementById('background');
+      const ctx = canvas.getContext('2d');
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      const particles = Array.from({ length: 100 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 3 + 1,
+        dx: (Math.random() - 0.5) * 1,
+        dy: (Math.random() - 0.5) * 1,
+      }));
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#00ff00';
+        particles.forEach((p) => {
+          p.x += p.dx;
+          p.y += p.dy;
+          if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+          if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        requestAnimationFrame(animate);
+      }
+      animate();
+
+      // Function to fetch QR from backend
+      async function generateQR() {
+        const container = document.getElementById('qr-container');
+        container.innerHTML = '<div id="loader"></div>';
+
+        try {
+          const response = await fetch('http://localhost:5000/generate-session');
+          const data = await response.json();
+
+          if (data.qr) {
+            container.innerHTML = `<img src="${data.qr}" alt="WhatsApp QR Code" />`;
+          } else {
+            container.innerHTML = '<p style="color:red;">⚠️ Failed to load QR. Try again.</p>';
+          }
+        } catch (error) {
+          container.innerHTML = '<p style="color:red;">❌ Error connecting to server.</p>';
+          console.error(error);
+        }
+      }
+    </script>
+  </body>
+</html>
