@@ -39,6 +39,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
+        flex-direction: column;
         min-width: 280px;
         min-height: 280px;
         margin: 10px 0;
@@ -48,6 +49,7 @@
         width: 280px;
         height: 280px;
         border-radius: 10px;
+        border: 2px solid #00ff00;
       }
 
       #loader {
@@ -108,7 +110,19 @@
         z-index: -1;
       }
 
-      /* Responsive */
+      .status-info {
+        margin-top: 10px;
+        font-size: 0.9rem;
+        opacity: 0.8;
+        text-align: center;
+      }
+
+      .connected-status {
+        color: #00ff88;
+        font-weight: bold;
+        margin-top: 10px;
+      }
+
       @media (max-width: 768px) {
         h1 {
           font-size: 1.5rem;
@@ -149,6 +163,8 @@
       <p style="opacity: 0.7;">Click below to generate QR</p>
     </div>
 
+    <div id="status-info" class="status-info"></div>
+
     <button class="btn" onclick="generateQR()">⚡ Generate QR Code</button>
     <a href="index.html" class="back-btn">⬅ Back to Home</a>
 
@@ -187,25 +203,71 @@
       }
       animate();
 
-      // Function to fetch QR from backend
+      let refreshInterval = null;
+
       async function generateQR() {
         const container = document.getElementById('qr-container');
+        const statusInfo = document.getElementById('status-info');
+        const button = document.querySelector('.btn');
+        
         container.innerHTML = '<div id="loader"></div>';
+        statusInfo.textContent = '🔄 Generating QR code...';
+        
+        const originalText = button.innerHTML;
+        button.innerHTML = '⏳ Generating...';
+        button.disabled = true;
 
         try {
-          const response = await fetch('http://localhost:5000/generate-session');
+          const response = await fetch("http://localhost:5000/generate-qr");
           const data = await response.json();
 
           if (data.qr) {
             container.innerHTML = `<img src="${data.qr}" alt="WhatsApp QR Code" />`;
-          } else {
-            container.innerHTML = '<p style="color:red;">⚠️ Failed to load QR. Try again.</p>';
+            statusInfo.textContent = '✅ QR Code generated! Scan it in WhatsApp → Linked Devices';
+            
+            // Auto-refresh every 20 seconds
+            if (refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(generateQR, 20000);
+            
+          } else if (data.status === 'connected') {
+            container.innerHTML = '<div class="connected-status">✅ WhatsApp is already connected!</div>';
+            statusInfo.textContent = 'No need to generate QR code. Session is active.';
+            if (refreshInterval) clearInterval(refreshInterval);
+          } else if (data.error) {
+            container.innerHTML = `<p style="color:red;">❌ ${data.error}</p>`;
+            statusInfo.textContent = '';
+            if (refreshInterval) clearInterval(refreshInterval);
           }
         } catch (error) {
-          container.innerHTML = '<p style="color:red;">❌ Error connecting to server.</p>';
           console.error(error);
+          container.innerHTML = '<p style="color:red;">❌ Error connecting to server.</p>';
+          statusInfo.textContent = 'Make sure the backend server is running on port 5000.';
+          if (refreshInterval) clearInterval(refreshInterval);
+        } finally {
+          button.innerHTML = originalText;
+          button.disabled = false;
         }
       }
+
+      // Check connection status on page load
+      window.addEventListener('load', async () => {
+        try {
+          const response = await fetch('http://localhost:5000/status');
+          const status = await response.json();
+          
+          if (status.connected) {
+            document.getElementById('qr-container').innerHTML = 
+              '<div class="connected-status">✅ WhatsApp is already connected!</div>';
+            document.getElementById('status-info').textContent = 'Session is active and ready to use.';
+          }
+        } catch (error) {
+          console.log('Server status check failed');
+        }
+      });
+
+      window.addEventListener('beforeunload', () => {
+        if (refreshInterval) clearInterval(refreshInterval);
+      });
     </script>
   </body>
 </html>
