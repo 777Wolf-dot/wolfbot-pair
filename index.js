@@ -6,7 +6,7 @@ const fs = require('fs');
 const pino = require('pino');
 const QRCode = require('qrcode');
 const crypto = require('crypto');
-const chalk = require('chalk');
+const chalk = require('chalk').default; // ✅ Fixed Chalk import for CommonJS
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -14,18 +14,16 @@ const PORT = process.env.PORT || 5000;
 const CURRENT_DIR = __dirname;
 const PUBLIC_DIR = path.join(CURRENT_DIR, 'Public');
 
-// ====== ✅ CORS & JSON MIDDLEWARE ======
+// ====== CORS & JSON MIDDLEWARE ======
 app.use(express.json());
 app.use(cors({
-  origin: '*', // allow all origins; you can change to your frontend domain
+  origin: '*',
   methods: ['GET', 'POST', 'DELETE'],
   allowedHeaders: ['Content-Type'],
 }));
-
 app.use(express.static(PUBLIC_DIR));
 
 const pairingSessions = new Map();
-
 let sock = null;
 let qrCode = null;
 let isConnected = false;
