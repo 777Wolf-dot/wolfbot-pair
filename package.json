@@ -9,9 +9,11 @@
   },
   "dependencies": {
     "@hapi/boom": "^10.0.1",
+    "@supabase/supabase-js": "^2.78.0",
     "@whiskeysockets/baileys": "^6.7.20",
     "chalk": "^5.6.2",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "pino": "^8.21.0",
     "qrcode": "^1.5.4"
