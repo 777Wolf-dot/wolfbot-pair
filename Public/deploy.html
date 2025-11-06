@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deploy Silent Wolf Bot</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #000;
+      color: #00ff00;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      overflow-x: hidden;
+      position: relative;
+      padding-bottom: 80px;
+    }
+
+    canvas#background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
+    h1 {
+      font-size: 2.6rem;
+      text-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00;
+      z-index: 1;
+      margin-top: 40px;
+    }
+
+    p {
+      max-width: 700px;
+      font-size: 1.1rem;
+      margin: 15px 20px 30px;
+      color: #aefad6;
+      line-height: 1.7;
+      z-index: 1;
+    }
+
+    h2 {
+      color: #00ff00;
+      margin-top: 40px;
+      font-size: 1.8rem;
+      text-shadow: 0 0 10px #00ff00;
+    }
+
+    .platforms {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 25px;
+      z-index: 1;
+      margin-bottom: 40px;
+    }
+
+    .card {
+      background: rgba(0, 255, 136, 0.1);
+      border: 2px solid #00ff00;
+      border-radius: 20px;
+      width: 260px;
+      padding: 25px 15px;
+      text-align: center;
+      transition: 0.4s ease;
+      box-shadow: 0 0 15px #00ff8850;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00;
+      background: rgba(0, 255, 136, 0.2);
+    }
+
+    .card h2 {
+      font-size: 1.4rem;
+      color: #00ff00;
+      margin-bottom: 10px;
+    }
+
+    .card p {
+      font-size: 0.95rem;
+      color: #aefad6;
+      margin-bottom: 15px;
+    }
+
+    .card button {
+      background: transparent;
+      border: 2px solid #00ff00;
+      color: #00ff00;
+      padding: 8px 18px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: 0.3s;
+      box-shadow: 0 0 10px #00ff0055;
+    }
+
+    .card button:hover {
+      background: #00ff00;
+      color: #000;
+      box-shadow: 0 0 20px #00ff00;
+    }
+
+    .guide, .config, .community {
+      background: rgba(0, 255, 136, 0.07);
+      border: 1px solid #00ff00;
+      border-radius: 15px;
+      padding: 25px;
+      max-width: 850px;
+      margin: 30px 20px;
+      box-shadow: 0 0 15px #00ff0080;
+      z-index: 1;
+    }
+
+    ul {
+      list-style: none;
+      text-align: left;
+      color: #aefad6;
+      line-height: 1.8;
+      font-size: 1rem;
+      max-width: 600px;
+      margin: 10px auto;
+    }
+
+    .back-btn {
+      margin-top: 20px;
+      background: transparent;
+      border: 2px solid #00ff00;
+      color: #00ff00;
+      padding: 10px 22px;
+      border-radius: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+      box-shadow: 0 0 10px #00ff0055;
+      z-index: 1;
+    }
+
+    .back-btn:hover {
+      background: #00ff00;
+      color: #000;
+      box-shadow: 0 0 20px #00ff00;
+      transform: translateY(-2px);
+    }
+
+    .btn {
+      background: #00ff00;
+      color: #000;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-weight: bold;
+      text-decoration: none;
+      margin: 5px;
+      display: inline-block;
+      transition: 0.3s;
+    }
+
+    .btn:hover {
+      background: #00cc66;
+      box-shadow: 0 0 15px #00ff00;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 0.9rem;
+      color: #00995c;
+      z-index: 1;
+    }
+
+    @media (max-width: 768px) {
+      h1 { font-size: 2rem; }
+      p { font-size: 1rem; padding: 0 15px; }
+      .card { width: 80%; }
+    }
+
+    @media (max-width: 480px) {
+      h1 { font-size: 1.6rem; }
+      .card h2 { font-size: 1.2rem; }
+      .card p, .card button { font-size: 0.9rem; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="background"></canvas>
+
+  <h1>🚀 Deploy Your Bot</h1>
+  <p>Choose your preferred hosting platform below to deploy your Silent Wolf Bot.<br>
+  Currently, all deployment options are <strong>Coming Soon</strong> — stay tuned for updates.</p>
+
+  <!-- Platform Cards -->
+  <div class="platforms">
+    <div class="card">
+      <h2>☁️ Heroku</h2>
+      <p>Deploy your Bot with a single click using the Heroku platform.</p>
+      <button disabled>Coming Soon</button>
+    </div>
+
+    <div class="card">
+      <h2>🚄 Railway</h2>
+      <p>Run your bot seamlessly on Railway’s reliable infrastructure.</p>
+      <button disabled>Coming Soon</button>
+    </div>
+
+    <div class="card">
+      <h2>🛰️ Katabump</h2>
+      <p>Deploy quickly on Katabump — lightweight, fast, and easy.</p>
+      <button disabled>Coming Soon</button>
+    </div>
+
+    
+
+    <div class="card">
+      <h2>🌌 AbyssNode</h2>
+      <p>Your personal Wolf-powered hosting service — coming soon.</p>
+      <button disabled>Coming Soon</button>
+    </div>
+  </div>
+
+  <!-- Deployment Guide -->
+  <section class="guide">
+    <h2>⚙️ Deployment Guide</h2>
+    <ul>
+      <li>1️⃣ Fork or clone the Silent Wolf Bot repository.</li>
+      <li>2️⃣ Edit <code>.env</code> file with your credentials and preferences.</li>
+      <li>3️⃣ Choose any of the above platforms to deploy once available.</li>
+      <li>4️⃣ Scan your QR or Pair Code to connect your WhatsApp account.</li>
+    </ul>
+  </section>
+
+  <!-- Configurations -->
+  <section class="config">
+    <h2>🧠 Basic Configuration</h2>
+    <ul>
+      <li><strong>BOT_NAME:</strong> Silent Wolf 🐺</li>
+      <li><strong>OWNER_NUMBER:</strong> +2547XXXXXXX</li>
+      <li><strong>PREFIX:</strong> . (dot)</li>
+      <li><strong>MODE:</strong> public / private</li>
+      <li><strong>THEME:</strong> Silent Wolf Neon</li>
+    </ul>
+  </section>
+
+  <!-- Community Links -->
+  <section class="community">
+    <h2>🌍 Join the Wolf Community</h2>
+    <p>Stay updated with Silent Wolf news, guides, and releases.</p>
+    <a href="#" class="btn">🐾 WhatsApp Group</a>
+    <a href="#" class="btn">📢 WhatsApp Channel</a>
+    <a href="#" class="btn">💻 WolfBot Repo</a>
+  </section>
+
+  <button class="back-btn" onclick="window.location.href='index.html'">⬅️ Back to Home</button>
+
+  <footer>© 2025 Silent Wolf Automation</footer>
+
+  <script>
+    // === MOVING GREEN BALLS BACKGROUND ===
+    const canvas = document.getElementById("background");
+    const ctx = canvas.getContext("2d");
+
+    let balls = [];
+    const numBalls = 100;
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    for (let i = 0; i < numBalls; i++) {
+      balls.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 4 + 1,
+        dx: (Math.random() - 0.5) * 1.2,
+        dy: (Math.random() - 0.5) * 1.2,
+      });
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      balls.forEach((b) => {
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx.fillStyle = "#00ff00";
+        ctx.shadowColor = "#00ff00";
+        ctx.shadowBlur = 15;
+        ctx.fill();
+
+        b.x += b.dx;
+        b.y += b.dy;
+
+        if (b.x < 0 || b.x > canvas.width) b.dx *= -1;
+        if (b.y < 0 || b.y > canvas.height) b.dy *= -1;
+      });
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
