@@ -9,6 +9,7 @@ const {
     default: Mbuvi_Tech,
     useMultiFileAuthState,
     delay,
+    Browsers,
     makeCacheableSignalKeyStore,
     Browsers
 } = require('@whiskeysockets/baileys');
@@ -33,7 +34,7 @@ router.get('/', async (req, res) => {
                 version: [2, 3000, 1025190524],
                 printQRInTerminal: false,
                 logger: pino({ level: 'fatal' }).child({ level: 'fatal' }),
-                browser: Browsers.macOS('Chrome')
+                browser: Browsers.ubuntu('Chrome')
             });
 
             if (!Pair_Code_By_Mbuvi_Tech.authState.creds.registered) {
