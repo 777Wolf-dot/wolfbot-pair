@@ -6,8 +6,7 @@
 import 'dotenv/config'; 
 // Import local helper to load other env files (assuming it uses ESM too)
 import "./helpers/loadEnv.js"; 
-// Import decryptBuffer (needed for full session management, even if not used here)
-import { encryptBuffer, decryptBuffer } from './helpers/crypto.js'; 
+import { encryptBuffer } from './helpers/crypto.js'; // Must include .js extension
 
 // Built-in Node Modules
 import fs from 'fs';
@@ -17,7 +16,7 @@ import crypto from 'crypto';
 // Third-Party Modules
 import express from 'express';
 import cors from 'cors';
-import chalk from 'chalk'; 
+import chalk from 'chalk'; // Correct ESM import for chalk
 import pino from 'pino';
 import QRCode from 'qrcode';
 import { createClient } from '@supabase/supabase-js';
@@ -41,13 +40,6 @@ const ENV_PATH = path.join(CURRENT_DIR, '.env');
 const AUTH_SESSIONS_DIR = path.join(CURRENT_DIR, 'auth_sessions');
 if (!fs.existsSync(AUTH_SESSIONS_DIR)) fs.mkdirSync(AUTH_SESSIONS_DIR, { recursive: true });
 
-// 🎯 FIX 1: Initialize Maps for multi-session handling
-/** @type {Map<string, string>} Maps temporary pairingCode to QR data */
-global.sessionQRCodes = new Map();
-/** @type {Map<string, ReturnType<typeof makeWASocket>>} Maps temporary pairingCode to socket instance */
-global.activePairingSockets = new Map();
-// ----------------------------------------------------------------------
-
 // 🔐 Auto-generate SESSION_ENCRYPTION_KEY if missing
 if (!process.env.SESSION_ENCRYPTION_KEY) {
     const newKey = crypto.randomBytes(24).toString('base64');
@@ -67,7 +59,6 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 const app = express();
 const PORT = process.env.PORT || 5000;
 app.use(express.json());
-// 🎯 CORS fix: Keep the '*' origin to allow access from local development (localhost) or render.com
 app.use(cors({ origin: '*', methods: ['GET', 'POST'], allowedHeaders: ['Content-Type'] }));
 app.use(express.static(PUBLIC_DIR));
 
@@ -75,7 +66,6 @@ app.use(express.static(PUBLIC_DIR));
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
 async function readAuthFolderAsObject(folder) {
-    // ... (unchanged)
     const result = {};
     if (!fs.existsSync(folder)) return result;
     for (const f of fs.readdirSync(folder)) {
@@ -94,36 +84,27 @@ async function readAuthFolderAsObject(folder) {
     return result;
 }
 
-// 🎯 FIX 2: saveSessionToSupabase now takes 'sessionId' for UPSERT/IDENTIFICATION
-async function saveSessionToSupabase(sessionId, credentialsObj) {
+async function saveSessionToSupabase(owner, credentialsObj) {
     try {
         const encrypted = encryptBuffer(Buffer.from(JSON.stringify(credentialsObj), 'utf-8'));
-        
-        // Delete any old session with the same user-defined ID
-        const { error: deleteError } = await supabase.from('sessions')
-            .delete()
-            .eq('owner', sessionId);
-        if (deleteError) console.warn(chalk.yellow(`Warning: Could not delete old session for ${sessionId}: ${deleteError.message}`));
-
-        // Insert new session using the user-defined Session ID
+        const session_id = crypto.randomUUID();
+        // Assuming your 'sessions' table has columns: session_id, owner, session_data, created_at
         const { error } = await supabase.from('sessions').insert({
-            session_id: crypto.randomUUID(), 
-            owner: sessionId, // Use the user-defined Session ID here
-            session_data: encrypted.toString('base64'), // Store as base64 string
+            session_id,
+            owner,
+            session_data: encrypted, // Encrypted session data (Buffer/Binary)
             created_at: new Date().toISOString()
         });
         if (error) throw error;
-        console.log(chalk.green(`💾 Session stored in Supabase for ${sessionId}`));
+        console.log(chalk.green(`💾 Session stored in Supabase for ${owner}`));
     } catch (err) {
         console.error(chalk.red('❌ Failed saving session:'), err);
     }
 }
-// ---------------------------------------------------------------------------------
 
 // ⚙️ Create a new ephemeral QR socket
-// 🎯 FIX 3: Accepts both temporary code and user-defined sessionId
-async function createPairingSocket(pairingCode, sessionId) {
-    const authFolder = path.join(AUTH_SESSIONS_DIR, pairingCode); // Use temporary code for folder
+async function createPairingSocket(pairingCode) {
+    const authFolder = path.join(AUTH_SESSIONS_DIR, pairingCode);
     fs.mkdirSync(authFolder, { recursive: true });
 
     const { state, saveCreds } = await useMultiFileAuthState(authFolder);
@@ -137,37 +118,46 @@ async function createPairingSocket(pairingCode, sessionId) {
             creds: state.creds,
             keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'fatal' })),
         },
+        // 🎯 FIX: Explicitly set a known browser config to ensure QR is preferred
         browser: Browsers.macOS('Chrome'), 
+        
+        // 🚨 IMPORTANT: Ensure legacy/pairing code options are NOT used or enabled
+        // If your Baileys version is newer, ensure any pairingCode logic is excluded.
+        // We rely on the absence of requestPairingCode() to force QR mode.
     });
-    
-    global.activePairingSockets.set(pairingCode, sock);
 
     sock.ev.on('creds.update', saveCreds);
 
     sock.ev.on('connection.update', async (update) => {
-        const { connection, qr, lastDisconnect } = update; 
+        const { connection, qr, lastDisconnect } = update; // 🎯 Ensure 'qr' is extracted
 
         if (qr) {
-            global.sessionQRCodes.set(pairingCode, qr);
+            // 🎯 FIX 1: Store QR string along with the unique pairing code identifier
+            global.latestQR = { qr: qr, pairingCode: pairingCode };
             console.log(chalk.yellow(`[${pairingCode}] QR ready to scan`));
+            
+            // Do NOT try to request a pairing code here. The 'qr' event alone enables QR mode.
         }
 
         if (connection === 'open') {
-            const userWaId = sock.user?.id;
-            console.log(chalk.green(`[${pairingCode}] WhatsApp connected → ${userWaId} (Session: ${sessionId})`));
+            const user = sock.user?.id;
+            console.log(chalk.green(`[${pairingCode}] WhatsApp connected → ${user}`));
 
             const credsObj = await readAuthFolderAsObject(authFolder);
-            // 🎯 FIX 4: Save session using the user-defined sessionId
-            await saveSessionToSupabase(sessionId, credsObj); 
+            await saveSessionToSupabase(user, credsObj);
 
             // Send DM to the user with confirmation
             try {
-                await sock.sendMessage(userWaId, { text: `✅ *Session linked successfully!*\n\nThis session is named: **${sessionId}** and is stored securely in Supabase.` });
+                await sock.sendMessage(user, { text: `✅ *Session linked successfully!*\n\nIt is now stored securely in Supabase.` });
             } catch (e) { console.error('Failed to send confirmation message:', e.message); }
             
-            // Cleanup: remove from Maps, delete files and disconnect socket
-            global.sessionQRCodes.delete(pairingCode);
-            global.activePairingSockets.delete(pairingCode);
+            // 🎯 FIX 2: Immediate cleanup for multi-session support
+            // Clear the global QR for this session immediately
+            if (global.latestQR && global.latestQR.pairingCode === pairingCode) {
+                global.latestQR = null; 
+            }
+
+            // Cleanup: delete files and disconnect socket immediately (no setTimeout)
             try { 
                 fs.rmSync(authFolder, { recursive: true, force: true }); 
                 sock.logout(); 
@@ -185,9 +175,12 @@ async function createPairingSocket(pairingCode, sessionId) {
                  chalk.gray(`[${pairingCode}] Connection closed. Reason: ${DisconnectReason[statusCode] || statusCode}. Reconnect: ${shouldReconnect}`)
              );
              if (!shouldReconnect) {
-                 global.sessionQRCodes.delete(pairingCode);
+                 // Clear global QR if logged out or permanently closed
+                 if (global.latestQR?.pairingCode === pairingCode) {
+                    global.latestQR = null;
+                 }
              }
-             global.activePairingSockets.delete(pairingCode);
+             // Forcing disconnect upon close event
              sock.ws?.close?.();
         }
     });
@@ -196,100 +189,44 @@ async function createPairingSocket(pairingCode, sessionId) {
 }
 
 // 🧾 ROUTES
-
-// 🎯 FIX 5: Implement true multi-session /status check
-app.get('/status', async (req, res) => {
-    const sessionId = req.query.session?.trim();
-    if (!sessionId) {
-        return res.status(400).json({ error: 'Missing session query parameter.' });
-    }
-
+app.post('/generate-paircode', async (req, res) => {
     try {
-        const { data, error } = await supabase.from('sessions')
-            .select('owner')
-            .eq('owner', sessionId)
-            .maybeSingle();
-
-        if (error) throw error;
-
-        if (data) {
-            return res.json({ 
-                status: 'ok', 
-                connected: true, 
-                session: sessionId,
-                details: `Session **${sessionId}** is stored and ready to use.`
-            });
-        }
-        
-        return res.json({ 
-            status: 'not_found', 
-            connected: false,
-            session: sessionId,
-            details: 'No session found. Click "Generate QR Code" to create a new session.'
-        });
-
-    } catch (err) {
-        console.error('❌ /status error:', err);
-        res.status(500).json({ error: 'Failed to check session status', details: err.message });
-    }
-});
-
-// 🎯 FIX 6: Changed from app.post to app.get to match frontend fetch
-app.get('/generate-qr', async (req, res) => { 
-    const sessionId = req.query.session?.trim();
-
-    if (!sessionId) {
-        return res.status(400).json({ error: 'Missing session query parameter.' });
-    }
-    
-    try {
-        // 1. Check if session already exists
-        const { data } = await supabase.from('sessions')
-            .select('owner')
-            .eq('owner', sessionId)
-            .maybeSingle();
-        
-        if (data) {
-             // If a session exists, prevent generating a QR and return connected status
-             return res.json({ status: 'connected', session: sessionId });
-        }
-        
-        // 2. Generate a temporary pairing code
         const pairingCode = crypto.randomBytes(4).toString('hex').toUpperCase();
+        console.log(chalk.blue(`🖼️ Generating QR Session (${pairingCode})`));
+        await createPairingSocket(pairingCode);
 
-        console.log(chalk.blue(`🖼️ Generating QR Session (${sessionId} / Temp Code: ${pairingCode})`));
-        // Pass both the temporary code and the user-defined ID
-        await createPairingSocket(pairingCode, sessionId); 
-
-        // 3. Wait for QR
+        // Wait for QR
         let qrData = null;
         const start = Date.now();
         
+        // Wait up to 15 seconds for the QR code to be generated by Baileys
         while (!qrData && Date.now() - start < 15000) { 
-            qrData = global.sessionQRCodes.get(pairingCode);
+            // 🎯 FIX 3: Check global object for the QR associated with this unique session ID
+            if (global.latestQR && global.latestQR.pairingCode === pairingCode) {
+                qrData = global.latestQR.qr;
+            }
             await delay(300);
         }
 
-        global.sessionQRCodes.delete(pairingCode);
-
-        if (!qrData) {
-             const sock = global.activePairingSockets.get(pairingCode);
-             if (sock) {
-                 sock.ws?.close?.();
-                 global.activePairingSockets.delete(pairingCode);
-             }
-             return res.status(500).json({ error: 'QR not ready within timeout. Try again.' });
+        // Clear the global QR variable immediately if timeout hit
+        if (global.latestQR && global.latestQR.pairingCode === pairingCode) {
+            global.latestQR = null;
         }
+
+        if (!qrData) return res.status(500).json({ error: 'QR not ready within timeout. Try again.' });
         
         const qrDataURL = await QRCode.toDataURL(qrData);
         
-        res.json({ qr: qrDataURL, status: 'ready', sessionId: sessionId });
+        // Response contains the base64 Data URL for the frontend
+        res.json({ code: pairingCode, qr: qrDataURL, status: 'ready' });
     } catch (err) {
-        console.error('❌ /generate-qr error:', err);
+        console.error('❌ /generate-paircode error:', err);
         res.status(500).json({ error: 'Failed to create pairing', details: err.message });
     }
 });
-// ---------------------------------------------------------------------------------
+
+// ✅ Health check
+app.get('/status', (_, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
 
 // 🧹 Cleanup
 process.on('SIGINT', () => process.exit(0));
