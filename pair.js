@@ -63,7 +63,7 @@ router.get('/', async (req, res) => {
 ║ -Set the session ID in Heroku and even panels:
 ║ - SESSION_ID: 
 
-║web: https://vercel-eta-snowy.vercel.app/
+║web: https://davexsite-sable.vercel.app/
 ╚═════════════════════╝
  _DAVE BOTS_
 
