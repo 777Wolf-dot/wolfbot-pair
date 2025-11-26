@@ -1,9 +1,9 @@
 {
   "name": "wolf-bot-server",
-  "type": "module",
   "version": "1.0.0",
-  "description": "WhatsApp Bot Server with Web Interface",
+  "description": "Silent Wolf WhatsApp Bot Server",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js"
@@ -14,9 +14,15 @@
     "dotenv": "^16.3.1",
     "@whiskeysockets/baileys": "^6.4.0",
     "pino": "^8.15.0",
-    "chalk": "^4.1.2"
+    "chalk": "^4.1.2",
+    "qrcode": "^1.5.1",
+    "node-fetch": "^3.3.2",
+    "ws": "^8.15.0",
+    "form-data": "^4.0.0"
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "author": "Silent Wolf",
+  "license": "MIT"
 }
