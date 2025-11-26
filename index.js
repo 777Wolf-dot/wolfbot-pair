@@ -473,13 +473,13 @@ app.get('/kip', (req, res) => {
     res.sendFile(join(__dirname, 'Public', 'kip.html'));
 });
 
-app.get('/deploy.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'Public', 'deploy.html'));
+app.get('/dep', (req, res) => {
+    res.sendFile(join(__dirname, 'Public', 'dep.html'));
 });
 
-app.get('/bot.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'Public', 'bot.html'));
-});
+
+
+
 
 // Server status
 app.get('/status', (req, res) => {
