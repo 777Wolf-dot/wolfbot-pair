@@ -312,7 +312,8 @@
       // Check if server is running on page load
       window.addEventListener('load', async () => {
         try {
-          const response = await fetch('http://localhost:5000/status');
+          const response = await fetch('https://wolfbot-pair-1.onrender.com/status');
+
           const status = await response.json();
           if (status.connected) {
             document.getElementById('paircode-box').textContent = '✅ WhatsApp is already connected!';
