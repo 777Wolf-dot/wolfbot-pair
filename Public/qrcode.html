@@ -4,14 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WhatsApp QR Pairing | Silent Wolf</title>
+    <!-- Load Poppins and QR Code library -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+
     <style>
-      /* --- Existing CSS remains the same --- */
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
       }
-
       body {
         background: #000;
         color: #00ff99;
@@ -24,22 +26,18 @@
         overflow: hidden;
         position: relative;
       }
-
       h1 {
         font-size: 2rem;
         margin-bottom: 20px;
         text-align: center;
         text-shadow: 0 0 15px #00ff88;
       }
-      
-      /* --- Added style for the Session Input Container --- */
       #session-input-container {
         margin-bottom: 15px;
         display: flex;
         flex-direction: column;
         align-items: center;
       }
-      
       #session-id {
         padding: 8px 10px;
         border: 2px solid #00ff00;
@@ -50,13 +48,14 @@
         width: 250px;
         margin-top: 5px;
       }
-      
       #session-id:focus {
         outline: none;
         box-shadow: 0 0 10px #00ff00;
       }
 
+      /* QR Container */
       #qr-container {
+        margin-top: 30px;
         background: rgba(0, 255, 0, 0.08);
         padding: 20px;
         border-radius: 20px;
@@ -70,11 +69,23 @@
         margin: 10px 0;
       }
 
-      img {
-        width: 280px;
-        height: 280px;
+      /* Wrapper for the canvas to ensure proper fit */
+      #qr-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        max-width: 280px;
+        aspect-ratio: 1 / 1;
+      }
+
+      /* Style for the QR code canvas */
+      #qrCanvas {
         border-radius: 10px;
         border: 2px solid #00ff00;
+        width: 100%;
+        height: auto;
+        max-width: 280px;
       }
 
       #loader {
@@ -85,7 +96,6 @@
         height: 50px;
         animation: spin 1s linear infinite;
       }
-
       @keyframes spin {
         to {
           transform: rotate(360deg);
@@ -93,7 +103,7 @@
       }
 
       .btn {
-        margin-top: 15px;
+        margin-top: 0px;
         padding: 10px 25px;
         border: 2px solid #00ff00;
         border-radius: 8px;
@@ -104,15 +114,17 @@
         transition: 0.3s ease;
         box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
       }
-
-      .btn:hover {
+      .btn:hover:not(:disabled) {
         background: #00ff00;
         color: #000;
         box-shadow: 0 0 25px #00ff00;
       }
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
 
       .back-btn {
-        margin-top: 15px;
         padding: 8px 20px;
         border: 1px solid #00ff00;
         border-radius: 8px;
@@ -120,15 +132,15 @@
         text-decoration: none;
         transition: 0.3s;
         font-size: 0.9rem;
+        margin-top: 15px;
       }
-
       .back-btn:hover {
         background: #00ff00;
         color: #000;
         box-shadow: 0 0 15px #00ff00;
       }
 
-      canvas {
+      canvas#background {
         position: fixed;
         top: 0;
         left: 0;
@@ -146,48 +158,45 @@
         color: #00ff88;
         font-weight: bold;
         margin-top: 10px;
+        text-align: center;
       }
 
       @media (max-width: 768px) {
         h1 {
           font-size: 1.5rem;
         }
-
-        img {
-          width: 220px;
-          height: 220px;
-        }
-
-        .btn {
-          padding: 8px 18px;
+        #qr-wrapper {
+          max-width: 220px;
         }
       }
-
       @media (max-width: 480px) {
         h1 {
           font-size: 1.2rem;
         }
-
         .btn,
         .back-btn {
           font-size: 0.85rem;
         }
-
         #qr-container {
           min-width: 200px;
           min-height: 200px;
         }
+        #qr-wrapper {
+          max-width: 200px;
+        }
       }
     </style>
   </head>
+
   <body>
     <canvas id="background"></canvas>
     <h1>Generate WhatsApp QR Code</h1>
 
     <div id="session-input-container">
-        <label for="session-id">Enter Session Name:</label>
-        <input type="text" id="session-id" value="default" placeholder="e.g., whatsapp-bot-2" />
+      <label for="session-id">Enter Session Name:</label>
+      <input type="text" id="session-id" value="default" placeholder="e.g., whatsapp-bot-2" />
     </div>
+
     <div id="qr-container">
       <p style="opacity: 0.7;">Click below to generate QR</p>
     </div>
@@ -198,7 +207,7 @@
     <a href="index.html" class="back-btn">⬅ Back to Home</a>
 
     <script>
-      // ... (Background particles logic remains the same)
+      // --- Background animation ---
       const canvas = document.getElementById('background');
       const ctx = canvas.getContext('2d');
       function resize() {
@@ -232,85 +241,117 @@
       }
       animate();
 
-      let refreshInterval = null;
+      // --- QR Code logic ---
+      const API_URL = 'http://localhost:5000';
+      const container = document.getElementById('qr-container');
+      const statusInfo = document.getElementById('status-info');
+      const button = document.querySelector('.btn');
+      const sessionIdInput = document.getElementById('session-id');
+      let pollInterval = null;
 
-      // --- MODIFIED generateQR FUNCTION ---
-      async function generateQR() {
-        const sessionId = document.getElementById('session-id').value.trim() || 'default'; // Get the Session ID
-        
-        if (!sessionId) {
-            alert('Please enter a valid Session Name.');
-            return;
-        }
+      function stopPolling() {
+        if (pollInterval) clearInterval(pollInterval);
+      }
 
-        const container = document.getElementById('qr-container');
-        const statusInfo = document.getElementById('status-info');
-        const button = document.querySelector('.btn');
-        
-        container.innerHTML = '<div id="loader"></div>';
-        statusInfo.textContent = `🔄 Generating QR code for session: **${sessionId}**...`;
-        
-        const originalText = button.innerHTML;
-        button.innerHTML = '⏳ Generating...';
-        button.disabled = true;
+      function drawQR(qrString) {
+        container.innerHTML = '<div id="qr-wrapper"><canvas id="qrCanvas"></canvas></div>';
+        const canvasElement = document.getElementById('qrCanvas');
 
+        const wrapperWidth = document.getElementById('qr-wrapper').offsetWidth;
+        const qrSize = Math.min(wrapperWidth, 280); // dynamically fit QR inside the container
+
+        QRCode.toCanvas(
+          canvasElement,
+          qrString,
+          {
+            width: qrSize,
+            margin: 2,
+            color: { dark: '#00ff00', light: '#000000' },
+          },
+          (error) => {
+            if (error) console.error('QR Draw Error:', error);
+          }
+        );
+      }
+
+      async function fetchStatus(sessionId) {
         try {
-          // --- API Call NOW includes the Session ID as a query parameter ---
-          const response = await fetch(`https://wolfbot-pair-1.onrender.com/generate-qr?session=${sessionId}`);
+          const response = await fetch(`${API_URL}/status/${sessionId}`);
+          if (!response.ok) throw new Error(`Server error ${response.status}`);
           const data = await response.json();
 
-          if (data.qr) {
-            container.innerHTML = `<img src="${data.qr}" alt="WhatsApp QR Code" />`;
-            statusInfo.innerHTML = `✅ QR Code generated for **${sessionId}**! Scan it in WhatsApp → Linked Devices`;
-            
-            // Auto-refresh every 20 seconds
-            if (refreshInterval) clearInterval(refreshInterval);
-            refreshInterval = setInterval(generateQR, 20000);
-            
-          } else if (data.status === 'connected') {
-            // Updated message to reflect the specific session
-            container.innerHTML = `<div class="connected-status">✅ WhatsApp session **${sessionId}** is already connected!</div>`;
-            statusInfo.innerHTML = `Session **${sessionId}** is active. No need to generate QR code.`;
-            if (refreshInterval) clearInterval(refreshInterval);
-            
-          } else if (data.error) {
-            container.innerHTML = `<p style="color:red;">❌ ${data.error}</p>`;
-            statusInfo.textContent = '';
-            if (refreshInterval) clearInterval(refreshInterval);
+          if (data.status === 'connected') {
+            stopPolling();
+            container.innerHTML = `<div class="connected-status">✅ WhatsApp session <b>${sessionId}</b> is connected!</div>`;
+            statusInfo.textContent = `Session ${sessionId} is active.`;
+            button.textContent = '⚡ Generate QR Code';
+            button.disabled = false;
+          } else if (data.status === 'qr' && data.qr) {
+            drawQR(data.qr);
+            statusInfo.textContent = `✅ QR generated for ${sessionId}. Scan it via WhatsApp → Linked Devices.`;
+            button.textContent = '🔄 Polling...';
+            button.disabled = true;
+          } else if (['paircode', 'initializing', 'connecting'].includes(data.status)) {
+            container.innerHTML = '<div id="loader"></div>';
+            statusInfo.textContent = `🔄 Waiting... (${data.status})`;
+          } else {
+            stopPolling();
+            container.innerHTML = `<p style="color:red;">❌ Session closed. Click Generate QR to restart.</p>`;
+            statusInfo.textContent = `Session ${sessionId} inactive.`;
+            button.textContent = '⚡ Generate QR Code';
+            button.disabled = false;
           }
         } catch (error) {
-          console.error(error);
+          stopPolling();
           container.innerHTML = '<p style="color:red;">❌ Error connecting to server.</p>';
-          statusInfo.textContent = 'Make sure the backend server is running and check the console.';
-          if (refreshInterval) clearInterval(refreshInterval);
-        } finally {
-          button.innerHTML = originalText;
+          statusInfo.textContent = 'Ensure backend is running on port 5000.';
+          button.textContent = '⚡ Generate QR Code';
           button.disabled = false;
         }
       }
 
-      // Check connection status on page load - MODIFIED
-      window.addEventListener('load', async () => {
-        const sessionId = document.getElementById('session-id').value.trim() || 'default';
-        try {
-          // --- API Call NOW includes the Session ID for status check ---
-          const response = await fetch(`http://localhost:5000/status?session=${sessionId}`);
-          const status = await response.json();
-          
-          if (status.connected) {
-            document.getElementById('qr-container').innerHTML = 
-              `<div class="connected-status">✅ WhatsApp session **${sessionId}** is already connected!</div>`;
-            document.getElementById('status-info').textContent = `Session **${sessionId}** is active and ready to use.`;
-          } else {
-            document.getElementById('status-info').textContent = `Current session name: **${sessionId}**. Click 'Generate QR Code' to begin.`;
-          }
-        } catch (error) {
-          console.log('Server status check failed or server is not running on localhost:5000');
-        }
-      });
+      async function generateQR() {
+        const sessionId = sessionIdInput.value.trim() || 'default';
+        stopPolling();
+        container.innerHTML = '<div id="loader"></div>';
+        statusInfo.textContent = `Initializing ${sessionId}...`;
+        button.textContent = '⏳ Initializing...';
+        button.disabled = true;
 
-      window.addEventListener('beforeunload', () => {
-        if (refreshInterval) clearInterval(refreshInterval);
+        try {
+          const response = await fetch(`${API_URL}/generate-qr`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId }),
+          });
+          const data = await response.json();
+          if (data.status === 'connected') fetchStatus(sessionId);
+          else {
+            pollInterval = setInterval(() => fetchStatus(sessionId), 5000);
+            fetchStatus(sessionId);
+          }
+        } catch {
+          container.innerHTML = '<p style="color:red;">❌ Failed to contact server API.</p>';
+          statusInfo.textContent = 'Verify server on localhost:5000.';
+          button.textContent = '⚡ Generate QR Code';
+          button.disabled = false;
+        }
+      }
+
+      window.addEventListener('load', async () => {
+        const sessionId = sessionIdInput.value.trim() || 'default';
+        try {
+          const res = await fetch(`${API_URL}/status/${sessionId}`);
+          const data = await res.json();
+          if (data.status === 'connected') {
+            container.innerHTML = `<div class="connected-status">✅ WhatsApp session <b>${sessionId}</b> is already connected!</div>`;
+            statusInfo.textContent = `Session ${sessionId} active.`;
+          } else {
+            statusInfo.textContent = `Session ${sessionId} idle. Click Generate QR to begin.`;
+          }
+        } catch {
+          statusInfo.textContent = `Server not reachable. Check backend.`;
+        }
       });
     </script>
   </body>

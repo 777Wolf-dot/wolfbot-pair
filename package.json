@@ -1,34 +1,22 @@
 {
-  "name": "whatsapp-session-generator",
+  "name": "wolf-bot-server",
+  "type": "module",
   "version": "1.0.0",
-  "description": "WhatsApp Session Generator with QR and Pair Code support",
+  "description": "WhatsApp Bot Server with Web Interface",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "node --watch index.js"
   },
   "dependencies": {
-    "@hapi/boom": "^10.0.1",
-    "@supabase/supabase-js": "^2.78.0",
-    "@whiskeysockets/baileys": "^6.7.20",
-    "chalk": "^5.6.2",
+    "express": "^4.18.2",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^4.21.2",
-    "pino": "^8.21.0",
-    "qrcode": "^1.5.4",
-    "qrcode-terminal": "^0.12.0"
+    "dotenv": "^16.3.1",
+    "@whiskeysockets/baileys": "^6.4.0",
+    "pino": "^8.15.0",
+    "chalk": "^4.1.2"
   },
-  "devDependencies": {
-    "nodemon": "^3.0.1"
-  },
-  "keywords": [
-    "whatsapp",
-    "baileys",
-    "session",
-    "qr-code",
-    "pairing"
-  ],
-  "author": "Silent Wolf",
-  "license": "MIT"
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }

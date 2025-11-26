@@ -246,7 +246,8 @@
         button.disabled = true;
 
         try {
-          const res = await fetch('https://wolfbot-pair-1.onrender.com/generate-paircode', {
+         // Old: const res = await fetch('https://wolfbot-pair-1.onrender.com/generate-paircode', {
+const res = await fetch('http://localhost:5000/generate-paircode',{
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ number: phoneNumber })
