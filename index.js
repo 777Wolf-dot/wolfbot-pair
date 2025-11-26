@@ -468,6 +468,11 @@ app.get('/qrcode', (req, res) => {
     res.sendFile(join(__dirname, 'Public', 'qrcode.html'));
 });
 
+
+app.get('/kip', (req, res) => {
+    res.sendFile(join(__dirname, 'Public', 'kip.html'));
+});
+
 app.get('/deploy.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'Public', 'deploy.html'));
 });
