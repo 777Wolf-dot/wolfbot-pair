@@ -472,8 +472,8 @@ app.get('/deploy', (req, res) => {
   res.sendFile(path.join(__dirname, 'Public', 'deploy.html'));
 });
 
-app.get('/bots', (req, res) => {
-  res.sendFile(path.join(__dirname, 'Public', 'bots.html'));
+app.get('/bot', (req, res) => {
+  res.sendFile(path.join(__dirname, 'Public', 'bot.html'));
 });
 
 // Server status
