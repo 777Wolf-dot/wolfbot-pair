@@ -469,11 +469,11 @@ app.get('/qrcode', (req, res) => {
 });
 
 app.get('/deploy', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'deploy.html'));
+  res.sendFile(path.join(__dirname, 'Public', 'deploy.html'));
 });
 
 app.get('/bots', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'bots.html'));
+  res.sendFile(path.join(__dirname, 'Public', 'bots.html'));
 });
 
 // Server status
