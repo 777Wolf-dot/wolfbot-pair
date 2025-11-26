@@ -468,13 +468,13 @@ app.get('/qrcode', (req, res) => {
     res.sendFile(join(__dirname, 'Public', 'qrcode.html'));
 });
 
-// app.get('/deploy', (req, res) => {
-//   res.sendFile(path.join(__dirname, 'Public', 'deploy.html'));
-// });
+app.get('/deploy.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'Public', 'deploy.html'));
+});
 
-// app.get('/bot', (req, res) => {
-//   res.sendFile(path.join(__dirname, 'Public', 'bot.html'));
-// });
+app.get('/bot.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'Public', 'bot.html'));
+});
 
 // Server status
 app.get('/status', (req, res) => {
