@@ -455,17 +455,17 @@ async function getOrCreateSession(sessionId = null) {
 
 // Serve main page (uses your existing index.html)
 app.get('/', (req, res) => {
-    res.sendFile(join(__dirname, 'public', 'index.html'));
+    res.sendFile(join(__dirname, 'Public', 'index.html'));
 });
 
 // Serve pair code page (uses your existing paircode.html)
 app.get('/paircode', (req, res) => {
-    res.sendFile(join(__dirname, 'public', 'paircode.html'));
+    res.sendFile(join(__dirname, 'Public', 'paircode.html'));
 });
 
 // Serve QR code page (uses your existing qrcode.html)
 app.get('/qrcode', (req, res) => {
-    res.sendFile(join(__dirname, 'public', 'qrcode.html'));
+    res.sendFile(join(__dirname, 'Public', 'qrcode.html'));
 });
 
 // Server status
@@ -738,7 +738,7 @@ async function startServer() {
 ║              🚀 SERVER RUNNING                 ║
 ╠════════════════════════════════════════════════╣
 ║ 🌐 URL: ${SERVER_URL}                   
-║ 📁 Static files: ./public                      
+║ 📁 Static files: ./Public                      
 ║ 💾 Sessions: ./sessions                        
 ║ 🆔 Auto Session ID Generation                  
 ║ 📧 Dual DM Messages                
