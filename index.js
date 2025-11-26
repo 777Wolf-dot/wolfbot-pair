@@ -330,7 +330,7 @@ class SessionManager {
                     
                 case 'session':
                     await this.sock.sendMessage(chatId, { 
-                        text: `📁 *Session Information*\\n\\n🆔 Session ID: \\\`${this.sessionId}\\\`\\n👑 Your Number: +${this.ownerInfo?.number || 'Unknown'}\\n🐺 Owner: Silent Wolf\\n📁 Folder: \\\`sessions/${this.sessionId}\\\`\\n🌐 Server: ${SERVER_URL}\\n\\n💡 *Deployment:* Check README.md for hosting instructions` 
+                        text: `📁 *Session Information*\\n\\n🆔 Session ID: \\\`\ ${this.sessionId}\\\`\\n👑 Your Number: +${this.ownerInfo?.number || 'Unknown'}\\n🐺 Owner: Silent Wolf\\n📁 Folder: \\\`sessions/${this.sessionId}\\\`\\n🌐 Server: ${SERVER_URL}\\n\\n💡 *Deployment:* Check README.md for hosting instructions` 
                     }, { quoted: msg });
                     break;
                     
