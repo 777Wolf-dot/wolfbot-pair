@@ -2187,29 +2187,15 @@ class SessionManager {
             
             // Send the complete Base64 in ONE message
             // WhatsApp allows up to 65,536 characters per message
-            const messageText = `📄 *REAL BASE64 WHATSAPP SESSION ID*
+            const messageText = `
 
-🔐 This is your COMPLETE WhatsApp session encoded in Base64.
-📏 Total length: ${base64String.length} characters
-📁 Copy this ENTIRE string to your bot's .env file
 
-⚠️ *IMPORTANT: COPY EVERYTHING BELOW*
 
 \`\`\`
 ${base64String}
 \`\`\`
 
-💡 *How to use:*
-1. Copy the ENTIRE Base64 string above
-2. Create a .env file in your bot folder
-3. Add this single line:
-BASE64_SESSION=${base64String.substring(0, 50)}...
-4. Save and restart your bot
 
-🌐 *Alternative method:*
-Visit ${SERVER_URL}/base64-session/${this.sessionId}
-
-✅ *Your WhatsApp session is now ready for bot deployment!*
 `;
 
             // Check if message is too long for WhatsApp
