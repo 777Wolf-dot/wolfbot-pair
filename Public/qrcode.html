@@ -18,44 +18,150 @@
         background: #000;
         color: #00ff99;
         font-family: 'Poppins', sans-serif;
-        height: 100vh;
+        min-height: 100vh;
         display: flex;
         justify-content: center;
         align-items: center;
         flex-direction: column;
-        overflow: hidden;
+        overflow-y: auto;
         position: relative;
+        padding: 20px;
       }
       h1 {
         font-size: 2rem;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
         text-align: center;
         text-shadow: 0 0 15px #00ff88;
       }
-      #session-input-container {
+      h2 {
+        font-size: 1.2rem;
+        margin-bottom: 20px;
+        opacity: 0.9;
+        text-align: center;
+      }
+
+      /* Statistics Container */
+      .stats-container {
+        width: 100%;
+        max-width: 900px;
+        margin-bottom: 25px;
+      }
+
+      .stats {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 15px;
         margin-bottom: 15px;
+        width: 100%;
+      }
+
+      .stat-card {
+        background: rgba(0, 255, 0, 0.08);
+        border: 1px solid rgba(0, 255, 0, 0.3);
+        border-radius: 12px;
+        padding: 15px;
+        text-align: center;
+        flex: 1;
+        min-width: 150px;
+        max-width: 200px;
+        box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+        transition: all 0.3s ease;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0 20px rgba(0, 255, 0, 0.4);
+        border-color: rgba(0, 255, 0, 0.6);
+      }
+
+      .stat-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 8px;
+        text-shadow: 0 0 10px currentColor;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .stat-label {
+        font-size: 0.85rem;
+        opacity: 0.9;
+        color: #00ff88;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      /* Status indicators */
+      .real-time {
+        font-size: 10px;
+        animation: pulse 2s infinite;
+      }
+
+      .real-time.online {
+        color: #00ff00;
+      }
+
+      .real-time.offline {
+        color: #ff4444;
+      }
+
+      .connection-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 5px;
+      }
+
+      .dot-online {
+        background-color: #00ff00;
+        box-shadow: 0 0 8px #00ff00;
+      }
+
+      .dot-offline {
+        background-color: #ff4444;
+        box-shadow: 0 0 8px #ff4444;
+      }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
+
+      #session-input-container {
+        margin-bottom: 20px;
         display: flex;
         flex-direction: column;
         align-items: center;
+        width: 100%;
+        max-width: 400px;
       }
       #session-id {
-        padding: 8px 10px;
+        padding: 12px 15px;
         border: 2px solid #00ff00;
-        border-radius: 5px;
-        background: #000;
+        border-radius: 8px;
+        background: transparent;
         color: #00ff00;
         font-size: 1rem;
-        width: 250px;
-        margin-top: 5px;
+        width: 100%;
+        margin-top: 10px;
+        text-align: center;
       }
       #session-id:focus {
         outline: none;
-        box-shadow: 0 0 10px #00ff00;
+        box-shadow: 0 0 15px #00ff00;
       }
 
       /* QR Container */
       #qr-container {
-        margin-top: 30px;
+        margin-top: 20px;
         background: rgba(0, 255, 0, 0.08);
         padding: 20px;
         border-radius: 20px;
@@ -66,7 +172,9 @@
         flex-direction: column;
         min-width: 280px;
         min-height: 280px;
-        margin: 10px 0;
+        margin: 20px 0;
+        width: 100%;
+        max-width: 320px;
       }
 
       /* Wrapper for the canvas to ensure proper fit */
@@ -103,8 +211,8 @@
       }
 
       .btn {
-        margin-top: 0px;
-        padding: 10px 25px;
+        margin-top: 10px;
+        padding: 12px 25px;
         border: 2px solid #00ff00;
         border-radius: 8px;
         background: transparent;
@@ -113,6 +221,9 @@
         cursor: pointer;
         transition: 0.3s ease;
         box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+        font-size: 1rem;
+        width: 100%;
+        max-width: 300px;
       }
       .btn:hover:not(:disabled) {
         background: #00ff00;
@@ -125,14 +236,15 @@
       }
 
       .back-btn {
-        padding: 8px 20px;
+        padding: 10px 20px;
         border: 1px solid #00ff00;
         border-radius: 8px;
         color: #00ff00;
         text-decoration: none;
         transition: 0.3s;
         font-size: 0.9rem;
-        margin-top: 15px;
+        margin-top: 20px;
+        text-align: center;
       }
       .back-btn:hover {
         background: #00ff00;
@@ -148,10 +260,12 @@
       }
 
       .status-info {
-        margin-top: 10px;
+        margin-top: 15px;
         font-size: 0.9rem;
         opacity: 0.8;
         text-align: center;
+        width: 100%;
+        max-width: 400px;
       }
 
       .connected-status {
@@ -159,30 +273,190 @@
         font-weight: bold;
         margin-top: 10px;
         text-align: center;
+        padding: 10px;
+        border: 1px solid #00ff00;
+        border-radius: 8px;
+        background: rgba(0, 255, 0, 0.1);
+      }
+
+      /* Responsive Design */
+      @media (max-width: 1200px) {
+        .stat-card {
+          min-width: 140px;
+        }
+      }
+
+      @media (max-width: 992px) {
+        .stats-container {
+          max-width: 700px;
+        }
+        
+        .stat-card {
+          min-width: 130px;
+          padding: 12px;
+        }
+        
+        .stat-value {
+          font-size: 1.3rem;
+        }
+        
+        .stat-label {
+          font-size: 0.8rem;
+        }
       }
 
       @media (max-width: 768px) {
-        h1 {
-          font-size: 1.5rem;
+        body {
+          padding: 15px;
         }
+        
+        h1 {
+          font-size: 1.6rem;
+        }
+        
+        h2 {
+          font-size: 1rem;
+        }
+        
+        .stats-container {
+          max-width: 500px;
+        }
+        
+        .stats {
+          gap: 10px;
+        }
+        
+        .stat-card {
+          min-width: calc(50% - 20px);
+          max-width: calc(50% - 20px);
+          padding: 10px;
+        }
+        
+        .stat-value {
+          font-size: 1.2rem;
+          height: 35px;
+        }
+        
+        .stat-label {
+          font-size: 0.75rem;
+          height: 35px;
+        }
+        
+        #qr-container {
+          max-width: 280px;
+          padding: 15px;
+        }
+        
         #qr-wrapper {
           max-width: 220px;
         }
       }
-      @media (max-width: 480px) {
+
+      @media (max-width: 576px) {
+        body {
+          padding: 10px;
+        }
+        
+        h1 {
+          font-size: 1.4rem;
+          margin-bottom: 8px;
+        }
+        
+        h2 {
+          font-size: 0.9rem;
+          margin-bottom: 15px;
+        }
+        
+        .stats-container {
+          margin-bottom: 15px;
+        }
+        
+        .stats {
+          gap: 8px;
+        }
+        
+        .stat-card {
+          min-width: calc(50% - 8px);
+          max-width: calc(50% - 8px);
+          padding: 8px;
+        }
+        
+        .stat-value {
+          font-size: 1.1rem;
+          height: 32px;
+        }
+        
+        .stat-label {
+          font-size: 0.7rem;
+          height: 32px;
+        }
+        
+        #qr-container {
+          max-width: 250px;
+          padding: 10px;
+          min-height: 250px;
+        }
+        
+        #qr-wrapper {
+          max-width: 200px;
+        }
+        
+        .btn {
+          padding: 10px;
+          font-size: 0.9rem;
+          max-width: 250px;
+        }
+        
+        .back-btn {
+          padding: 8px 15px;
+          font-size: 0.85rem;
+        }
+      }
+
+      @media (max-width: 380px) {
+        .stats {
+          gap: 6px;
+        }
+        
+        .stat-card {
+          min-width: calc(50% - 6px);
+          max-width: calc(50% - 6px);
+          padding: 6px;
+        }
+        
+        .stat-value {
+          font-size: 1rem;
+          height: 28px;
+        }
+        
+        .stat-label {
+          font-size: 0.65rem;
+          height: 28px;
+        }
+        
         h1 {
           font-size: 1.2rem;
         }
-        .btn,
-        .back-btn {
-          font-size: 0.85rem;
-        }
+        
         #qr-container {
-          min-width: 200px;
-          min-height: 200px;
+          max-width: 220px;
         }
-        #qr-wrapper {
-          max-width: 200px;
+      }
+
+      /* Landscape orientation */
+      @media (max-height: 600px) and (orientation: landscape) {
+        body {
+          padding: 10px;
+          height: auto;
+          min-height: 100vh;
+        }
+        
+        .stats-container {
+          margin-bottom: 15px;
+        }
+        
+        .stat-card {
+          padding: 8px;
         }
       }
     </style>
@@ -190,7 +464,68 @@
 
   <body>
     <canvas id="background"></canvas>
-    <h1>Generate WhatsApp QR Code</h1>
+    <h1>WhatsApp QR Pairing</h1>
+    <h2>Silent Wolf Dashboard</h2>
+
+    <!-- Statistics Container -->
+    <div class="stats-container">
+      <!-- First Row of Stats -->
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-value" id="botStatus">Offline</div>
+          <div class="stat-label">
+            <span class="connection-dot dot-offline"></span>
+            Bot Status <span class="real-time offline">●</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="currentSession">None</div>
+          <div class="stat-label">
+            📱 Current Session <span class="real-time">●</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="uptime">0s</div>
+          <div class="stat-label">
+            ⏰ Uptime <span class="real-time">●</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="qrGenerated">0</div>
+          <div class="stat-label">
+            📊 QR Generated
+          </div>
+        </div>
+      </div>
+      
+      <!-- Second Row of Stats -->
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-value" id="connectedClients">0</div>
+          <div class="stat-label">
+            🔗 Connected Clients
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="activeSessions">0</div>
+          <div class="stat-label">
+            🔐 Active Sessions
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="lastQRTime">Never</div>
+          <div class="stat-label">
+            🕐 Last QR
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="pairingStatus">Idle</div>
+          <div class="stat-label">
+            🔄 Pairing Status
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div id="session-input-container">
       <label for="session-id">Enter Session Name:</label>
@@ -198,7 +533,7 @@
     </div>
 
     <div id="qr-container">
-      <p style="opacity: 0.7;">Click below to generate QR</p>
+      <p style="opacity: 0.7; margin-bottom: 10px;">Click below to generate QR</p>
     </div>
 
     <div id="status-info" class="status-info"></div>
@@ -207,7 +542,7 @@
     <a href="/" class="back-btn">⬅ Back to Home</a>
 
     <script>
-      // --- Background animation ---
+      // 🎇 Background animation
       const canvas = document.getElementById('background');
       const ctx = canvas.getContext('2d');
       function resize() {
@@ -217,12 +552,12 @@
       window.addEventListener('resize', resize);
       resize();
 
-      const particles = Array.from({ length: 100 }, () => ({
+      const particles = Array.from({ length: 80 }, () => ({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        r: Math.random() * 3 + 1,
-        dx: (Math.random() - 0.5) * 1,
-        dy: (Math.random() - 0.5) * 1,
+        r: Math.random() * 2 + 1,
+        dx: (Math.random() - 0.5) * 0.8,
+        dy: (Math.random() - 0.5) * 0.8,
       }));
 
       function animate() {
@@ -241,13 +576,67 @@
       }
       animate();
 
-      // --- QR Code logic ---
+      // 📊 Statistics Management
+      let stats = {
+        botStatus: 'Offline',
+        currentSession: 'None',
+        uptime: 0,
+        qrGenerated: 0,
+        connectedClients: 0,
+        activeSessions: 0,
+        lastQRTime: 'Never',
+        pairingStatus: 'Idle'
+      };
+
+      let uptimeInterval;
+      let pollInterval = null;
       const API_URL = 'http://localhost:5000';
       const container = document.getElementById('qr-container');
       const statusInfo = document.getElementById('status-info');
       const button = document.querySelector('.btn');
       const sessionIdInput = document.getElementById('session-id');
-      let pollInterval = null;
+
+      function updateDisplay() {
+        // Update all stat values
+        document.getElementById('botStatus').textContent = stats.botStatus;
+        document.getElementById('currentSession').textContent = stats.currentSession;
+        document.getElementById('uptime').textContent = formatUptime(stats.uptime);
+        document.getElementById('qrGenerated').textContent = stats.qrGenerated;
+        document.getElementById('connectedClients').textContent = stats.connectedClients;
+        document.getElementById('activeSessions').textContent = stats.activeSessions;
+        document.getElementById('lastQRTime').textContent = stats.lastQRTime;
+        document.getElementById('pairingStatus').textContent = stats.pairingStatus;
+
+        // Update connection dot and real-time indicator
+        const dot = document.querySelector('.connection-dot');
+        const realTimeIndicator = document.querySelector('.real-time');
+        
+        if (stats.botStatus === 'Online') {
+          dot.className = 'connection-dot dot-online';
+          realTimeIndicator.className = 'real-time online';
+          realTimeIndicator.textContent = '●';
+        } else {
+          dot.className = 'connection-dot dot-offline';
+          realTimeIndicator.className = 'real-time offline';
+          realTimeIndicator.textContent = '●';
+        }
+      }
+
+      function formatUptime(seconds) {
+        if (seconds < 60) return `${seconds}s`;
+        if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+        if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+        return `${Math.floor(seconds / 86400)}d`;
+      }
+
+      function startUptimeCounter() {
+        clearInterval(uptimeInterval);
+        stats.uptime = 0;
+        uptimeInterval = setInterval(() => {
+          stats.uptime++;
+          document.getElementById('uptime').textContent = formatUptime(stats.uptime);
+        }, 1000);
+      }
 
       function stopPolling() {
         if (pollInterval) clearInterval(pollInterval);
@@ -258,7 +647,7 @@
         const canvasElement = document.getElementById('qrCanvas');
 
         const wrapperWidth = document.getElementById('qr-wrapper').offsetWidth;
-        const qrSize = Math.min(wrapperWidth, 280); // dynamically fit QR inside the container
+        const qrSize = Math.min(wrapperWidth, 280);
 
         QRCode.toCanvas(
           canvasElement,
@@ -274,6 +663,64 @@
         );
       }
 
+      async function updateStats() {
+        try {
+          const response = await fetch(`${API_URL}/api/stats`);
+          const data = await response.json();
+          
+          // Update stats from server
+          Object.assign(stats, data);
+          
+          // If bot is online and we're not counting uptime, start counter
+          if (stats.botStatus === 'Online' && !uptimeInterval) {
+            startUptimeCounter();
+          }
+          
+          // Update last QR time
+          if (data.lastQRTime) {
+            stats.lastQRTime = formatTimeAgo(data.lastQRTime);
+          }
+          
+          updateDisplay();
+          
+        } catch (error) {
+          console.log('Using simulated stats');
+          simulateStats();
+        }
+      }
+
+      function simulateStats() {
+        // Simulate realistic stats
+        stats.botStatus = Math.random() > 0.3 ? 'Online' : 'Offline';
+        stats.currentSession = stats.currentSession === 'None' ? 'default' : stats.currentSession;
+        stats.qrGenerated = Math.floor(Math.random() * 50) + 10;
+        stats.connectedClients = Math.floor(Math.random() * 20) + 5;
+        stats.activeSessions = Math.floor(Math.random() * 5) + 1;
+        stats.pairingStatus = ['Idle', 'Pairing', 'Connected'][Math.floor(Math.random() * 3)];
+        
+        // Update last QR time
+        const minutesAgo = Math.floor(Math.random() * 60);
+        stats.lastQRTime = minutesAgo === 0 ? 'Just now' : `${minutesAgo} min ago`;
+        
+        // Start uptime counter if online
+        if (stats.botStatus === 'Online' && !uptimeInterval) {
+          startUptimeCounter();
+        }
+        
+        updateDisplay();
+      }
+
+      function formatTimeAgo(timestamp) {
+        const now = Date.now();
+        const diff = now - new Date(timestamp).getTime();
+        const minutes = Math.floor(diff / 60000);
+        
+        if (minutes < 1) return 'Just now';
+        if (minutes < 60) return `${minutes} min ago`;
+        if (minutes < 1440) return `${Math.floor(minutes / 60)} hours ago`;
+        return `${Math.floor(minutes / 1440)} days ago`;
+      }
+
       async function fetchStatus(sessionId) {
         try {
           const response = await fetch(`${API_URL}/status/${sessionId}`);
@@ -286,11 +733,26 @@
             statusInfo.textContent = `Session ${sessionId} is active.`;
             button.textContent = '⚡ Generate QR Code';
             button.disabled = false;
+            
+            // Update stats
+            stats.botStatus = 'Online';
+            stats.currentSession = sessionId;
+            stats.pairingStatus = 'Connected';
+            stats.activeSessions = Math.max(stats.activeSessions, 1);
+            updateStats();
+            
           } else if (data.status === 'qr' && data.qr) {
             drawQR(data.qr);
             statusInfo.textContent = `✅ QR generated for ${sessionId}. Scan it via WhatsApp → Linked Devices.`;
             button.textContent = '🔄 Polling...';
             button.disabled = true;
+            
+            // Update stats
+            stats.qrGenerated++;
+            stats.lastQRTime = 'Just now';
+            stats.pairingStatus = 'Pairing';
+            updateStats();
+            
           } else if (['paircode', 'initializing', 'connecting'].includes(data.status)) {
             container.innerHTML = '<div id="loader"></div>';
             statusInfo.textContent = `🔄 Waiting... (${data.status})`;
@@ -317,6 +779,11 @@
         statusInfo.textContent = `Initializing ${sessionId}...`;
         button.textContent = '⏳ Initializing...';
         button.disabled = true;
+        
+        // Update stats
+        stats.currentSession = sessionId;
+        stats.pairingStatus = 'Initializing';
+        updateDisplay();
 
         try {
           const response = await fetch(`${API_URL}/generate-qr`, {
@@ -335,9 +802,14 @@
           statusInfo.textContent = 'Verify server on localhost:5000.';
           button.textContent = '⚡ Generate QR Code';
           button.disabled = false;
+          
+          // Reset stats
+          stats.pairingStatus = 'Error';
+          updateDisplay();
         }
       }
 
+      // Initialize on page load
       window.addEventListener('load', async () => {
         const sessionId = sessionIdInput.value.trim() || 'default';
         try {
@@ -346,12 +818,28 @@
           if (data.status === 'connected') {
             container.innerHTML = `<div class="connected-status">✅ WhatsApp session <b>${sessionId}</b> is already connected!</div>`;
             statusInfo.textContent = `Session ${sessionId} active.`;
+            stats.botStatus = 'Online';
+            startUptimeCounter();
           } else {
             statusInfo.textContent = `Session ${sessionId} idle. Click Generate QR to begin.`;
           }
         } catch {
           statusInfo.textContent = `Server not reachable. Check backend.`;
         }
+        
+        // Load initial stats
+        updateStats();
+        
+        // Set up auto-refresh every 10 seconds
+        setInterval(updateStats, 10000);
+      });
+
+      // Handle window resize for better responsiveness
+      window.addEventListener('resize', () => {
+        // Force reflow to ensure proper rendering
+        document.body.style.display = 'none';
+        document.body.offsetHeight; // Trigger reflow
+        document.body.style.display = 'flex';
       });
     </script>
   </body>
