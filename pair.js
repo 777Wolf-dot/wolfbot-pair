@@ -11,7 +11,7 @@ const {
     delay,
     makeCacheableSignalKeyStore,
     Browsers
-} = require('@whiskeysockets/baileys');
+} = require('@trashcore/baileys');
 
 function removeFile(FilePath) {
     if (!fs.existsSync(FilePath)) return false;
@@ -33,7 +33,7 @@ router.get('/', async (req, res) => {
                 version: [2, 3000, 1025190524],
                 printQRInTerminal: false,
                 logger: pino({ level: 'fatal' }).child({ level: 'fatal' }),
-                browser: ["Ubuntu", "Opera", "100.0.4815.0"],
+                                browser: ["Ubuntu", "Opera", "100.0.4815.0"],
             });
 
             if (!Pair_Code_By_Mbuvi_Tech.authState.creds.registered) {
@@ -50,24 +50,21 @@ router.get('/', async (req, res) => {
             Pair_Code_By_Mbuvi_Tech.ev.on('connection.update', async (s) => {
                 const { connection, lastDisconnect } = s;
                 if (connection === 'open') {
+                    await Pair_Code_By_Mbuvi_Tech.newsletterFollow("120363423767541304@newsletter");
+                    await Pair_Code_By_Mbuvi_Tech.groupAcceptInvite("Hd14oCh8LT1A3EheIpZycL");
                     await delay(5000);
                     let data = fs.readFileSync(__dirname + `/temp/${id}/creds.json`);
-                    await delay(800);
+                    await delay(1000);
                     let b64data = Buffer.from(data).toString('base64');
                     let session = await Pair_Code_By_Mbuvi_Tech.sendMessage(Pair_Code_By_Mbuvi_Tech.user.id, { text: 'DAVE-AI:~' + b64data });
 
                     let Mbuvi_MD_TEXT = `
         
-╔════════════════════◇
-║『 thanks for choosing my Bots』
-║ -Set the session ID in Heroku and even panels:
-║ - SESSION_ID: 
+╔════════════════════
+║『 SESSION CONNECTED』
+║ OWNER: Dave
 
-║web: https://davexsite-sable.vercel.app/
-╚═════════════════════╝
- _DAVE BOTS_
-
-Don't Forget To Give Star To My Repo
+Don't Forget To Give Star ⭐ ⭐ To My Repo
 ______________________________`;
 
                     await Pair_Code_By_Mbuvi_Tech.sendMessage(Pair_Code_By_Mbuvi_Tech.user.id, { text: Mbuvi_MD_TEXT }, { quoted: session });
