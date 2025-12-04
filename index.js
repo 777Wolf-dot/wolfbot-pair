@@ -6084,8 +6084,7 @@
 
 
 // ====== WOLF BOT SERVER - index.js ======
-// Web server for WhatsApp pairing with Pair Code ONLY
-// Enhanced with debugging for command response issues
+// CLEAN VERSION: No socket.io dependency
 
 import express from 'express';
 import cors from 'cors';
@@ -6095,10 +6094,9 @@ import fs from 'fs';
 import dotenv from 'dotenv';
 import chalk from 'chalk';
 import crypto from 'crypto';
-import { Server } from 'socket.io';
-import { createServer } from 'http';
+import axios from 'axios';
 
-// Correct Baileys imports
+// Baileys imports
 import makeWASocket, {
     useMultiFileAuthState,
     DisconnectReason,
@@ -6108,6 +6106,7 @@ import makeWASocket, {
 } from '@whiskeysockets/baileys';
 
 import pino from 'pino';
+import QRCode from 'qrcode';
 
 // ====== CONFIGURATION ======
 dotenv.config();
@@ -6117,73 +6116,219 @@ const __dirname = dirname(__filename);
 
 const PORT = process.env.PORT || 5000;
 const PREFIX = process.env.PREFIX || '.';
-const BOT_NAME = process.env.BOT_NAME || 'NORAH-MD';
-const VERSION = '1.0.0';
+const BOT_NAME = process.env.BOT_NAME || 'Silent Wolf';
+const VERSION = '2.1.0';
 const SERVER_URL = process.env.SERVER_URL || `http://localhost:${PORT}`;
 
+// GitHub Configuration
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || '';
+const GITHUB_REPO_OWNER = process.env.GITHUB_REPO_OWNER || '777Wolf-dot';
+const GITHUB_REPO_NAME = process.env.GITHUB_REPO_NAME || 'Silent-Wolf--Bot';
+const GITHUB_COMMANDS_PATH = process.env.GITHUB_COMMANDS_PATH || 'commands/';
+
 const app = express();
-const httpServer = createServer(app);
-const io = new Server(httpServer, {
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
-    }
-});
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(join(__dirname, 'public')));
 
 // Global variables
 const sessions = new Map();
 const pairCodeRequests = new Map();
-const activeConnections = new Map();
-const commandStats = {
-    totalUsed: 0,
-    lastUsed: null,
-    commandCount: {}
-};
+const qrCodes = new Map();
 
 console.log(chalk.cyan(`
 ╔════════════════════════════════════════════════╗
-║   🤖 ${chalk.bold(BOT_NAME.toUpperCase())} SERVER — ${chalk.green('STARTING')}  
+║   🐺 ${chalk.bold(BOT_NAME.toUpperCase())} SERVER — ${chalk.green('STARTING')}  
 ║   ⚙️ Version : ${VERSION}
 ║   🌐 Port    : ${PORT}
 ║   💬 Prefix  : "${PREFIX}"
-║   🔗 Mode    : Pair Code ONLY
-║   🐛 Debug   : ENABLED
+║   📂 GitHub : ${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}
 ╚════════════════════════════════════════════════╝
 `));
+
+// ====== GITHUB COMMANDS MANAGER ======
+class GitHubCommandsManager {
+    constructor() {
+        this.commands = new Map();
+        this.lastFetched = null;
+        this.cacheDuration = 300000; // 5 minutes
+        
+        console.log(chalk.cyan(`📂 GitHub Commands Manager initialized`));
+    }
+
+    async fetchCommands(force = false) {
+        try {
+            // Check cache
+            if (!force && this.lastFetched && (Date.now() - this.lastFetched) < this.cacheDuration) {
+                return this.commands;
+            }
+
+            console.log(chalk.blue('📂 Fetching commands from GitHub...'));
+            
+            const headers = {};
+            if (GITHUB_TOKEN) {
+                headers['Authorization'] = `token ${GITHUB_TOKEN}`;
+            }
+            headers['Accept'] = 'application/vnd.github.v3+json';
+
+            // Fetch command files
+            const url = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_COMMANDS_PATH}`;
+            
+            const response = await axios.get(url, { headers, timeout: 15000 });
+            
+            const commandFiles = response.data.filter(item => 
+                item.type === 'file' && 
+                (item.name.endsWith('.js') || item.name.endsWith('.json'))
+            );
+
+            console.log(chalk.cyan(`📂 Found ${commandFiles.length} command files`));
+
+            // Clear old commands
+            this.commands.clear();
+
+            // Load each command file
+            for (const file of commandFiles) {
+                try {
+                    const fileResponse = await axios.get(file.download_url, { headers, timeout: 10000 });
+                    const commandData = this.parseCommandFile(file.name, fileResponse.data);
+                    
+                    if (commandData) {
+                        this.commands.set(commandData.name, commandData);
+                        console.log(chalk.green(`✅ Loaded: ${commandData.name}`));
+                    }
+                } catch (error) {
+                    console.error(chalk.red(`❌ Error loading ${file.name}:`), error.message);
+                }
+            }
+
+            this.lastFetched = Date.now();
+            
+            if (this.commands.size > 0) {
+                console.log(chalk.green(`🎉 Successfully loaded ${this.commands.size} commands from GitHub`));
+            } else {
+                console.log(chalk.yellow('⚠️  No commands loaded from GitHub'));
+                this.createSampleCommands();
+            }
+
+            return this.commands;
+
+        } catch (error) {
+            console.error(chalk.red('❌ Error fetching commands:'), error.message);
+            
+            // Create sample commands if GitHub fails
+            if (this.commands.size === 0) {
+                this.createSampleCommands();
+            }
+            
+            return this.commands;
+        }
+    }
+
+    parseCommandFile(filename, content) {
+        try {
+            const name = filename.replace('.js', '').replace('.json', '').toLowerCase();
+            
+            if (filename.endsWith('.json')) {
+                const jsonData = JSON.parse(content);
+                return {
+                    name,
+                    type: 'json',
+                    data: jsonData,
+                    filename,
+                    description: jsonData.description || 'No description'
+                };
+            } else if (filename.endsWith('.js')) {
+                return {
+                    name,
+                    type: 'js',
+                    code: content,
+                    filename,
+                    description: 'JavaScript command'
+                };
+            }
+        } catch (error) {
+            console.error(chalk.red(`❌ Error parsing ${filename}:`), error.message);
+            return null;
+        }
+    }
+
+    createSampleCommands() {
+        console.log(chalk.blue('🔧 Creating sample commands...'));
+        
+        const sampleCommands = [
+            {
+                name: 'greet',
+                type: 'json',
+                data: {
+                    name: 'greet',
+                    description: 'Greet a user',
+                    response: '👋 Hello {user}! Welcome to {botname}!\n\n📂 Commands loaded from GitHub!\n🌐 Repo: {repo}'
+                },
+                filename: 'greet.json',
+                description: 'Greet command'
+            },
+            {
+                name: 'ping',
+                type: 'json',
+                data: {
+                    name: 'ping',
+                    description: 'Check bot status',
+                    response: '🏓 Pong! Bot is alive!\n\n📡 Server: {server}\n📂 GitHub: {repo}'
+                },
+                filename: 'ping.json',
+                description: 'Ping command'
+            }
+        ];
+
+        sampleCommands.forEach(cmd => {
+            this.commands.set(cmd.name, cmd);
+        });
+
+        this.lastFetched = Date.now();
+        console.log(chalk.green(`✅ Created ${sampleCommands.length} sample commands`));
+    }
+
+    getCommand(name) {
+        return this.commands.get(name.toLowerCase());
+    }
+
+    getAllCommands() {
+        return Array.from(this.commands.values()).map(cmd => ({
+            name: cmd.name,
+            type: cmd.type,
+            filename: cmd.filename,
+            description: cmd.description
+        }));
+    }
+
+    getCommandsCount() {
+        return this.commands.size;
+    }
+}
+
+// Initialize GitHub Commands Manager
+const githubCommands = new GitHubCommandsManager();
 
 // ====== UTILITY FUNCTIONS ======
 function generateSessionId() {
     const timestamp = Date.now().toString(36);
     const random1 = crypto.randomBytes(20).toString('hex');
     const random2 = crypto.randomBytes(16).toString('hex');
-    return `norah_${timestamp}_${random1}_${random2}`;
+    const random3 = crypto.randomBytes(12).toString('hex');
+    const random4 = crypto.randomBytes(8).toString('hex');
+    return `wolf_${timestamp}_${random1}_${random2}_${random3}_${random4}`;
 }
 
-function formatUptime(seconds) {
-    const days = Math.floor(seconds / (3600 * 24));
-    const hours = Math.floor((seconds % (3600 * 24)) / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    
-    if (days > 0) return `${days}d ${hours}h`;
-    if (hours > 0) return `${hours}h ${minutes}m`;
-    if (minutes > 0) return `${minutes}m ${secs}s`;
-    return `${secs}s`;
-}
-
-function formatTimeAgo(timestamp) {
-    const now = Date.now();
-    const diff = now - timestamp;
-    
-    if (diff < 60000) return 'Just now';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-    return `${Math.floor(diff / 86400000)}d ago`;
+function generateQRDataURL(qrString) {
+    return new Promise((resolve, reject) => {
+        QRCode.toDataURL(qrString, (err, url) => {
+            if (err) reject(err);
+            else resolve(url);
+        });
+    });
 }
 
 // ====== SESSION MANAGEMENT ======
@@ -6193,27 +6338,26 @@ class SessionManager {
         this.sock = null;
         this.state = null;
         this.saveCreds = null;
+        this.qrCode = null;
+        this.qrDataURL = null;
         this.connectionStatus = 'disconnected';
         this.ownerInfo = null;
         this.lastActivity = Date.now();
-        this.connectionMethod = 'pair';
+        this.connectionMethod = null;
         this.retryCount = 0;
         this.maxRetries = 3;
-        this.hasSentConnectionMessage = false;
-        this.startedAt = Date.now();
-        this.totalCommands = 0;
-        this.currentOwnerName = 'NORAH-MD';
-        this.currentOwnerNumber = null;
-        this.isProcessing = false;
-        this.messageQueue = [];
+        this.qrTimeout = null;
+        this.base64Session = null;
+        this.sessionGenerated = false;
+        
+        console.log(chalk.blue(`[${this.sessionId}] New session created`));
     }
 
     async initialize() {
         try {
             const authFolder = `./sessions/${this.sessionId}`;
-            console.log(chalk.blue(`[${this.sessionId}] 🚀 Initializing session...`));
+            console.log(chalk.blue(`[${this.sessionId}] Initializing session...`));
             
-            // Ensure session directory exists
             if (!fs.existsSync(authFolder)) {
                 fs.mkdirSync(authFolder, { recursive: true });
             }
@@ -6224,608 +6368,34 @@ class SessionManager {
             this.saveCreds = saveCreds;
 
             const { version } = await fetchLatestBaileysVersion();
-            console.log(chalk.blue(`[${this.sessionId}] 📦 Baileys version: ${version}`));
 
-            // CRITICAL: Enhanced socket configuration for message handling
             this.sock = makeWASocket({
                 version,
-                logger: pino({ level: 'debug' }), // Changed to debug for more info
+                logger: pino({ level: 'warn' }),
                 browser: Browsers.ubuntu('Chrome'),
-                printQRInTerminal: false,
+                printQRInTerminal: true,
                 auth: {
                     creds: state.creds,
                     keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'fatal' })),
                 },
-                // CRITICAL SETTINGS FOR MESSAGE HANDLING
-                emitOwnEvents: true,
-                shouldIgnoreJid: (jid) => false, // Don't ignore any JIDs
-                syncFullHistory: false,
                 markOnlineOnConnect: true,
                 generateHighQualityLinkPreview: true,
                 connectTimeoutMs: 60000,
-                keepAliveIntervalMs: 25000,
+                keepAliveIntervalMs: 30000,
                 defaultQueryTimeoutMs: 0,
+                emitOwnEvents: true,
                 mobile: false,
-                // Message handling optimization
-                retryRequestDelayMs: 2000,
-                maxRetries: 5,
-                fireInitQueries: true,
-                appStateMacVerification: {
-                    patch: false,
-                    snapshot: false
-                },
-                transactionOpts: {
-                    maxCommitRetries: 5,
-                    delayBetweenTriesMs: 3000
-                },
-                // Ensure we can send messages
-                getMessage: async (key) => {
-                    return { conversation: "message" };
-                }
             });
 
             this.setupEventHandlers();
             this.connectionStatus = 'initializing';
             
-            console.log(chalk.green(`[${this.sessionId}] ✅ Session initialized`));
+            console.log(chalk.green(`✅ Session ${this.sessionId} initialized`));
             return true;
         } catch (error) {
-            console.error(chalk.red(`[${this.sessionId}] ❌ Failed to initialize session:`), error.message);
-            console.error(chalk.red(`[${this.sessionId}] Error stack:`), error.stack);
+            console.error(chalk.red(`❌ Failed to initialize session:`), error.message);
             this.connectionStatus = 'error';
             return false;
-        }
-    }
-
-    setupEventHandlers() {
-        if (!this.sock) {
-            console.log(chalk.red(`[${this.sessionId}] ❌ Socket not available for event handlers`));
-            return;
-        }
-
-        console.log(chalk.blue(`[${this.sessionId}] 🛠️ Setting up event handlers...`));
-
-        // Connection updates with enhanced logging
-        this.sock.ev.on('connection.update', async (update) => {
-            const { connection, qr, lastDisconnect, receivedPendingNotifications } = update;
-            this.lastActivity = Date.now();
-
-            console.log(chalk.cyan(`[${this.sessionId}] 🔗 Connection update:`));
-            console.log(chalk.gray(`[${this.sessionId}]   Status: ${connection}`));
-            console.log(chalk.gray(`[${this.sessionId}]   Pending notifications: ${receivedPendingNotifications}`));
-            
-            if (qr) {
-                console.log(chalk.yellow(`[${this.sessionId}] 📱 QR code detected (should not happen in pair mode)`));
-            }
-
-            if (connection === 'open') {
-                this.connectionStatus = 'connected';
-                this.retryCount = 0;
-                
-                // Get user info
-                const user = this.sock.user;
-                console.log(chalk.green(`[${this.sessionId}] ✅ WhatsApp connected successfully!`));
-                console.log(chalk.cyan(`[${this.sessionId}] 👤 User ID: ${user?.id || 'Unknown'}`));
-                console.log(chalk.cyan(`[${this.sessionId}] 📱 User info:`, JSON.stringify(user, null, 2)));
-                
-                if (user && user.id) {
-                    this.ownerInfo = {
-                        jid: user.id,
-                        number: user.id.split('@')[0],
-                        name: user.name || 'NORAH-MD User'
-                    };
-                    
-                    this.currentOwnerNumber = this.ownerInfo.number;
-                    this.currentOwnerName = this.ownerInfo.name;
-                    
-                    console.log(chalk.green(`[${this.sessionId}] 👑 Owner set: ${this.currentOwnerName} (+${this.currentOwnerNumber})`));
-                }
-                
-                // Test message sending capability
-                await this.testMessageSending();
-                
-                // Notify Socket.IO clients
-                this.notifyClients('connected');
-                
-                // Send connection confirmation message
-                setTimeout(() => this.sendConnectionConfirmation(), 2000);
-            }
-
-            if (connection === 'close') {
-                const statusCode = lastDisconnect?.error?.output?.statusCode;
-                const error = lastDisconnect?.error;
-                
-                console.log(chalk.yellow(`[${this.sessionId}] 🔒 Connection closed:`));
-                console.log(chalk.gray(`[${this.sessionId}]   Status code: ${statusCode}`));
-                console.log(chalk.gray(`[${this.sessionId}]   Error: ${error?.message || 'No error'}`));
-                
-                if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
-                    console.log(chalk.yellow(`[${this.sessionId}] 🔓 Logged out - cleaning up`));
-                    this.notifyClients('disconnected');
-                    this.cleanup();
-                } else if (this.retryCount < this.maxRetries) {
-                    this.retryCount++;
-                    console.log(chalk.yellow(`[${this.sessionId}] 🔄 Retrying connection (${this.retryCount}/${this.maxRetries})...`));
-                    setTimeout(() => this.initialize(), 5000);
-                } else {
-                    this.connectionStatus = 'disconnected';
-                    this.notifyClients('disconnected');
-                    console.log(chalk.red(`[${this.sessionId}] ❌ Max retries reached`));
-                }
-            }
-        });
-
-        // Credentials updates
-        this.sock.ev.on('creds.update', () => {
-            console.log(chalk.gray(`[${this.sessionId}] 🔑 Credentials updated`));
-            if (this.saveCreds) {
-                this.saveCreds();
-            }
-        });
-
-        // Message handling with enhanced debugging
-        this.sock.ev.on('messages.upsert', async (update) => {
-            console.log(chalk.cyan(`[${this.sessionId}] 📨 Messages upsert event received!`));
-            console.log(chalk.gray(`[${this.sessionId}]   Update type: ${update.type}`));
-            console.log(chalk.gray(`[${this.sessionId}]   Messages count: ${update.messages?.length || 0}`));
-            
-            const { messages, type } = update;
-            
-            if (type !== 'notify') {
-                console.log(chalk.gray(`[${this.sessionId}]   Skipping (not notify type: ${type})`));
-                return;
-            }
-            
-            if (!messages || messages.length === 0) {
-                console.log(chalk.gray(`[${this.sessionId}]   No messages in update`));
-                return;
-            }
-            
-            const msg = messages[0];
-            console.log(chalk.green(`[${this.sessionId}] ✅ Processing message from: ${msg.key.remoteJid}`));
-            console.log(chalk.gray(`[${this.sessionId}]   Message ID: ${msg.key.id}`));
-            console.log(chalk.gray(`[${this.sessionId}]   From me: ${msg.key.fromMe ? 'Yes' : 'No'}`));
-            
-            // Skip messages from ourselves
-            if (msg.key.fromMe) {
-                console.log(chalk.gray(`[${this.sessionId}]   Skipping message from self`));
-                return;
-            }
-            
-            this.lastActivity = Date.now();
-            await this.handleIncomingMessage(msg);
-        });
-
-        // Additional message events for debugging
-        this.sock.ev.on('messages.set', (update) => {
-            console.log(chalk.blue(`[${this.sessionId}] 📚 Messages set event`));
-        });
-
-        this.sock.ev.on('messages.update', (update) => {
-            console.log(chalk.blue(`[${this.sessionId}] 🔄 Messages update event`));
-        });
-
-        // Connection events
-        this.sock.ev.on('connection.connecting', () => {
-            console.log(chalk.yellow(`[${this.sessionId}] 🔄 Connecting...`));
-        });
-
-        this.sock.ev.on('connection.open', () => {
-            console.log(chalk.green(`[${this.sessionId}] ✅ Connection open event`));
-        });
-
-        console.log(chalk.green(`[${this.sessionId}] ✅ Event handlers set up`));
-    }
-
-    // Test message sending capability
-    async testMessageSending() {
-        if (!this.ownerInfo || !this.sock) return;
-        
-        try {
-            console.log(chalk.cyan(`[${this.sessionId}] 🧪 Testing message sending...`));
-            
-            // Send a test message to ourselves
-            const testMessage = {
-                text: `🤖 ${BOT_NAME} is now online!\n\nType ${PREFIX}help for commands.`
-            };
-            
-            await this.sock.sendMessage(this.ownerInfo.jid, testMessage);
-            console.log(chalk.green(`[${this.sessionId}] ✅ Test message sent successfully`));
-            
-        } catch (error) {
-            console.error(chalk.red(`[${this.sessionId}] ❌ Test message failed:`), error.message);
-            console.error(chalk.red(`[${this.sessionId}] Error details:`), error.stack);
-        }
-    }
-
-    // Notify all Socket.IO clients
-    notifyClients(event, data = {}) {
-        const statusData = {
-            sessionId: this.sessionId,
-            status: this.connectionStatus,
-            ownerNumber: this.ownerInfo?.number,
-            ownerName: this.currentOwnerName,
-            timestamp: Date.now(),
-            ...data
-        };
-        
-        console.log(chalk.cyan(`[${this.sessionId}] 📡 Emitting ${event} to Socket.IO`));
-        io.emit(`bot_${event}`, statusData);
-        io.emit('stats_update', this.getStats());
-    }
-
-    async sendConnectionConfirmation() {
-        if (!this.ownerInfo || !this.sock || this.hasSentConnectionMessage) return;
-        
-        try {
-            console.log(chalk.cyan(`[${this.sessionId}] 📝 Sending connection confirmation...`));
-            
-            const message = {
-                text: `┏━💜 ${BOT_NAME} CONNECTED 💜━━┓
-┃
-┃   ✅ *CONNECTION SUCCESSFUL*
-┃
-┃   🤖 *Bot Name:* ${BOT_NAME}
-┃   📞 *Your Number:* +${this.ownerInfo.number}
-┃   🔗 *Method:* Pair Code
-┃   🌐 *Server:* ${SERVER_URL}
-┃   🟢 *Status:* Successfully Connected
-┃
-┃   💡 *Available Commands:*
-┃   • ${PREFIX}help - Show all commands
-┃   • ${PREFIX}menu - Show main menu
-┃   • ${PREFIX}ping - Test bot response
-┃   • ${PREFIX}info - Bot information
-┃   • ${PREFIX}time - Current time
-┃   • ${PREFIX}joke - Get a random joke
-┃   • ${PREFIX}session - Session info
-┃
-┃   🎯 Your bot is now active and ready!
-┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`
-            };
-            
-            await this.sock.sendMessage(this.ownerInfo.jid, message);
-            this.hasSentConnectionMessage = true;
-            
-            console.log(chalk.green(`[${this.sessionId}] ✅ Connection confirmation sent to +${this.ownerInfo.number}`));
-            
-            // Notify web clients
-            this.notifyClients('connection_success', {
-                number: this.ownerInfo.number,
-                name: this.currentOwnerName
-            });
-            
-        } catch (error) {
-            console.error(chalk.red(`[${this.sessionId}] ❌ Could not send connection confirmation:`), error.message);
-        }
-    }
-
-    async handleIncomingMessage(msg) {
-        if (this.isProcessing) {
-            console.log(chalk.yellow(`[${this.sessionId}] ⏳ Already processing a message, queuing...`));
-            this.messageQueue.push(msg);
-            return;
-        }
-        
-        this.isProcessing = true;
-        
-        try {
-            const chatId = msg.key.remoteJid;
-            const isGroup = chatId.endsWith('@g.us');
-            
-            console.log(chalk.cyan(`[${this.sessionId}] 📨 Handling message:`));
-            console.log(chalk.gray(`[${this.sessionId}]   Chat ID: ${chatId}`));
-            console.log(chalk.gray(`[${this.sessionId}]   Is Group: ${isGroup}`));
-            
-            // Extract message text with better debugging
-            let textMsg = '';
-            
-            if (msg.message?.conversation) {
-                textMsg = msg.message.conversation;
-                console.log(chalk.gray(`[${this.sessionId}]   Type: conversation`));
-            } else if (msg.message?.extendedTextMessage?.text) {
-                textMsg = msg.message.extendedTextMessage.text;
-                console.log(chalk.gray(`[${this.sessionId}]   Type: extended text`));
-            } else if (msg.message?.imageMessage?.caption) {
-                textMsg = msg.message.imageMessage.caption;
-                console.log(chalk.gray(`[${this.sessionId}]   Type: image with caption`));
-            } else {
-                console.log(chalk.gray(`[${this.sessionId}]   Type: other (no text content)`));
-                console.log(chalk.gray(`[${this.sessionId}]   Message keys:`, Object.keys(msg.message || {})));
-            }
-            
-            console.log(chalk.yellow(`[${this.sessionId}]   Message text: "${textMsg}"`));
-            console.log(chalk.gray(`[${this.sessionId}]   Message length: ${textMsg.length}`));
-            
-            // Check if it's a command
-            if (!textMsg || !textMsg.startsWith(PREFIX)) {
-                console.log(chalk.gray(`[${this.sessionId}]   Not a command (no prefix or empty)`));
-                this.isProcessing = false;
-                return;
-            }
-
-            const command = textMsg.slice(PREFIX.length).trim().split(' ')[0].toLowerCase();
-            const fullCommand = textMsg.slice(PREFIX.length).trim();
-            
-            console.log(chalk.magenta(`[${this.sessionId}] ⚡ Command detected: ${PREFIX}${command}`));
-            console.log(chalk.gray(`[${this.sessionId}]   Full command: "${fullCommand}"`));
-            
-            // Check socket connection
-            if (!this.sock || this.connectionStatus !== 'connected') {
-                console.log(chalk.red(`[${this.sessionId}] ❌ Socket not connected! Status: ${this.connectionStatus}`));
-                this.isProcessing = false;
-                return;
-            }
-            
-            // Update command stats
-            this.totalCommands++;
-            commandStats.totalUsed++;
-            commandStats.lastUsed = Date.now();
-            commandStats.commandCount[command] = (commandStats.commandCount[command] || 0) + 1;
-            
-            // Notify web clients of command usage
-            io.emit('command_used', {
-                command: command,
-                user: chatId,
-                timestamp: Date.now(),
-                sessionId: this.sessionId
-            });
-
-            // Send immediate acknowledgment
-            try {
-                console.log(chalk.cyan(`[${this.sessionId}] 📤 Sending command acknowledgment...`));
-                await this.sock.sendMessage(chatId, { 
-                    text: `✅ *Command received:* \`${PREFIX}${command}\`\n⏳ Processing...`
-                });
-            } catch (ackError) {
-                console.error(chalk.red(`[${this.sessionId}] ❌ Ack failed:`), ackError.message);
-            }
-
-            // Process the command
-            await this.processCommand(command, fullCommand, chatId, msg);
-            
-            console.log(chalk.green(`[${this.sessionId}] ✅ Command ${command} processed successfully`));
-            
-        } catch (error) {
-            console.error(chalk.red(`[${this.sessionId}] ❌ Error in handleIncomingMessage:`), error);
-            console.error(chalk.red(`[${this.sessionId}] Error stack:`), error.stack);
-            
-            // Try to send error message
-            try {
-                if (this.sock && msg?.key?.remoteJid) {
-                    await this.sock.sendMessage(msg.key.remoteJid, { 
-                        text: `⚠️ *Error processing command*\n\n${error.message || 'Unknown error'}\n\nPlease try again.`
-                    });
-                }
-            } catch (sendError) {
-                console.error(chalk.red(`[${this.sessionId}] ❌ Failed to send error message:`), sendError);
-            }
-        } finally {
-            this.isProcessing = false;
-            
-            // Process next message in queue
-            if (this.messageQueue.length > 0) {
-                const nextMsg = this.messageQueue.shift();
-                console.log(chalk.cyan(`[${this.sessionId}] 🔄 Processing next queued message...`));
-                setTimeout(() => this.handleIncomingMessage(nextMsg), 500);
-            }
-        }
-    }
-
-    async processCommand(command, fullCommand, chatId, originalMsg) {
-        console.log(chalk.cyan(`[${this.sessionId}] 🔧 Processing command: ${command}`));
-        
-        try {
-            // Basic test command - always works
-            if (command === 'test') {
-                console.log(chalk.blue(`[${this.sessionId}]   Executing test command`));
-                await this.sock.sendMessage(chatId, { 
-                    text: '🧪 *Test Successful!*\n\nBot is responding correctly.\n\nTry other commands like:\n• .ping\n• .menu\n• .help'
-                }, { quoted: originalMsg });
-                return;
-            }
-            
-            // Switch statement for all commands
-            switch (command) {
-                case 'ping':
-                    console.log(chalk.blue(`[${this.sessionId}]   Executing ping command`));
-                    await this.sock.sendMessage(chatId, { text: '🏓 *Pong!*' }, { quoted: originalMsg });
-                    break;
-                    
-                case 'help':
-                case 'menu':
-                    console.log(chalk.blue(`[${this.sessionId}]   Executing menu command`));
-                    const menuText = `💜 *${BOT_NAME} MENU* 💜\n\n` +
-                                  `⚡ *Core Commands*\n` +
-                                  `• ${PREFIX}ping - Test bot response\n` +
-                                  `• ${PREFIX}menu - Show this menu\n` +
-                                  `• ${PREFIX}info - Bot information\n` +
-                                  `• ${PREFIX}time - Current time\n` +
-                                  `• ${PREFIX}joke - Get a random joke\n` +
-                                  `• ${PREFIX}quote - Get a random quote\n\n` +
-                                  
-                                  `🔧 *Session Commands*\n` +
-                                  `• ${PREFIX}session - Session information\n` +
-                                  `• ${PREFIX}owner - Owner information\n` +
-                                  `• ${PREFIX}status - Connection status\n\n` +
-                                  
-                                  `🎉 *Fun Commands*\n` +
-                                  `• ${PREFIX}joke - Get a random joke\n` +
-                                  `• ${PREFIX}fact - Get a random fact\n` +
-                                  `• ${PREFIX}quote - Get an inspirational quote\n\n` +
-                                  
-                                  `📊 *Stats Commands*\n` +
-                                  `• ${PREFIX}stats - Bot statistics\n` +
-                                  `• ${PREFIX}uptime - Bot uptime\n\n` +
-                                  
-                                  `🌐 *Server:* ${SERVER_URL}\n` +
-                                  `🤖 *Version:* ${VERSION}\n` +
-                                  `🔗 *Prefix:* ${PREFIX}`;
-                    
-                    await this.sock.sendMessage(chatId, { text: menuText }, { quoted: originalMsg });
-                    break;
-                    
-                case 'info':
-                    console.log(chalk.blue(`[${this.sessionId}]   Executing info command`));
-                    const uptime = formatUptime((Date.now() - this.startedAt) / 1000);
-                    const infoText = `💜 *${BOT_NAME} INFORMATION* 💜\n\n` +
-                                   `⚙️ *Version:* ${VERSION}\n` +
-                                   `💬 *Prefix:* ${PREFIX}\n` +
-                                   `👑 *Owner:* ${this.currentOwnerName}\n` +
-                                   `📞 *Number:* +${this.ownerInfo?.number || 'Unknown'}\n` +
-                                   `🌐 *Server:* ${SERVER_URL}\n` +
-                                   `📁 *Session:* ${this.sessionId.substring(0, 15)}...\n` +
-                                   `⏰ *Uptime:* ${uptime}\n` +
-                                   `📊 *Commands:* ${this.totalCommands}\n` +
-                                   `🔥 *Status:* ${this.connectionStatus}`;
-                    
-                    await this.sock.sendMessage(chatId, { text: infoText }, { quoted: originalMsg });
-                    break;
-                    
-                case 'session':
-                    console.log(chalk.blue(`[${this.sessionId}]   Executing session command`));
-                    const sessionText = `📁 *SESSION INFORMATION*\n\n` +
-                                      `🆔 *Session ID:* ${this.sessionId}\n` +
-                                      `👤 *Your Number:* +${this.ownerInfo?.number || 'Unknown'}\n` +
-                                      `🤖 *Bot Name:* ${BOT_NAME}\n` +
-                                      `👑 *Owner:* ${this.currentOwnerName}\n` +
-                                      `📁 *Folder:* sessions/${this.sessionId}\n` +
-                                      `🌐 *Server:* ${SERVER_URL}\n` +
-                                      `🔗 *Method:* Pair Code\n` +
-                                      `🟢 *Status:* ${this.connectionStatus}\n` +
-                                      `📊 *Commands:* ${this.totalCommands}`;
-                    
-                    await this.sock.sendMessage(chatId, { text: sessionText }, { quoted: originalMsg });
-                    break;
-                    
-                case 'time':
-                    console.log(chalk.blue(`[${this.sessionId}]   Executing time command`));
-                    const now = new Date();
-                    const timeStr = now.toLocaleTimeString();
-                    const dateStr = now.toLocaleDateString();
-                    const timeText = `🕰️ *CURRENT TIME*\n\n` +
-                                   `📅 *Date:* ${dateStr}\n` +
-                                   `⏰ *Time:* ${timeStr}\n` +
-                                   `🌍 *Server Time:* ${now.toUTCString()}`;
-                    
-                    await this.sock.sendMessage(chatId, { text: timeText }, { quoted: originalMsg });
-                    break;
-                    
-                case 'joke':
-                    console.log(chalk.blue(`[${this.sessionId}]   Executing joke command`));
-                    const jokes = [
-                        "Why don't scientists trust atoms? Because they make up everything!",
-                        "Why did the scarecrow win an award? He was outstanding in his field!",
-                        "What do you call a fake noodle? An impasta!",
-                        "Why did the math book look so sad? Because it had too many problems.",
-                        "What do you call a bear with no teeth? A gummy bear!"
-                    ];
-                    const randomJoke = jokes[Math.floor(Math.random() * jokes.length)];
-                    await this.sock.sendMessage(chatId, { 
-                        text: `😂 *JOKE OF THE MOMENT*\n\n${randomJoke}`
-                    }, { quoted: originalMsg });
-                    break;
-                    
-                case 'quote':
-                    console.log(chalk.blue(`[${this.sessionId}]   Executing quote command`));
-                    const quotes = [
-                        "The only way to do great work is to love what you do. – Steve Jobs",
-                        "Your time is limited, so don't waste it living someone else's life. – Steve Jobs",
-                        "The future belongs to those who believe in the beauty of their dreams. – Eleanor Roosevelt",
-                        "Believe you can and you're halfway there. – Theodore Roosevelt"
-                    ];
-                    const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
-                    await this.sock.sendMessage(chatId, { 
-                        text: `💭 *INSPIRATIONAL QUOTE*\n\n"${randomQuote}"`
-                    }, { quoted: originalMsg });
-                    break;
-                    
-                case 'fact':
-                    console.log(chalk.blue(`[${this.sessionId}]   Executing fact command`));
-                    const facts = [
-                        "Honey never spoils. Archaeologists have found pots of honey in ancient Egyptian tombs that are over 3,000 years old and still perfectly good to eat.",
-                        "Octopuses have three hearts. Two pump blood to the gills, while the third pumps it to the rest of the body.",
-                        "A day on Venus is longer than a year on Venus. It takes Venus longer to rotate once on its axis than to complete one orbit of the Sun."
-                    ];
-                    const randomFact = facts[Math.floor(Math.random() * facts.length)];
-                    await this.sock.sendMessage(chatId, { 
-                        text: `📚 *DID YOU KNOW?*\n\n${randomFact}`
-                    }, { quoted: originalMsg });
-                    break;
-                    
-                case 'stats':
-                    console.log(chalk.blue(`[${this.sessionId}]   Executing stats command`));
-                    const botUptime = formatUptime((Date.now() - this.startedAt) / 1000);
-                    const globalUptime = formatUptime(process.uptime());
-                    const statsText = `📊 *BOT STATISTICS*\n\n` +
-                                    `🤖 *Bot Name:* ${BOT_NAME}\n` +
-                                    `⚙️ *Version:* ${VERSION}\n` +
-                                    `⏰ *Session Uptime:* ${botUptime}\n` +
-                                    `🌐 *Server Uptime:* ${globalUptime}\n` +
-                                    `📞 *Your Number:* +${this.ownerInfo?.number || 'Unknown'}\n` +
-                                    `📊 *Session Commands:* ${this.totalCommands}\n` +
-                                    `🌍 *Global Commands:* ${commandStats.totalUsed}\n` +
-                                    `🔗 *Connection:* ${this.connectionStatus}\n` +
-                                    `👑 *Owner:* ${this.currentOwnerName}`;
-                    
-                    await this.sock.sendMessage(chatId, { text: statsText }, { quoted: originalMsg });
-                    break;
-                    
-                case 'uptime':
-                    console.log(chalk.blue(`[${this.sessionId}]   Executing uptime command`));
-                    const uptimeMsg = formatUptime((Date.now() - this.startedAt) / 1000);
-                    const uptimeText = `⏰ *UPTIME INFORMATION*\n\n` +
-                                     `🤖 *Bot Name:* ${BOT_NAME}\n` +
-                                     `🕐 *Session Started:* ${new Date(this.startedAt).toLocaleString()}\n` +
-                                     `⏱️ *Uptime:* ${uptimeMsg}\n` +
-                                     `📊 *Commands Processed:* ${this.totalCommands}\n` +
-                                     `🟢 *Status:* ${this.connectionStatus}\n` +
-                                     `🌐 *Server:* ${SERVER_URL}`;
-                    
-                    await this.sock.sendMessage(chatId, { text: uptimeText }, { quoted: originalMsg });
-                    break;
-                    
-                case 'owner':
-                    console.log(chalk.blue(`[${this.sessionId}]   Executing owner command`));
-                    const ownerText = `👑 *OWNER INFORMATION*\n\n` +
-                                    `🤖 *Bot Name:* ${BOT_NAME}\n` +
-                                    `👤 *Current Owner:* ${this.currentOwnerName}\n` +
-                                    `📞 *Number:* +${this.ownerInfo?.number || 'Unknown'}\n` +
-                                    `🔗 *Connection Method:* Pair Code\n` +
-                                    `🌐 *Server:* ${SERVER_URL}\n` +
-                                    `⏰ *Connected Since:* ${new Date(this.startedAt).toLocaleString()}\n` +
-                                    `📊 *Commands Used:* ${this.totalCommands}`;
-                    
-                    await this.sock.sendMessage(chatId, { text: ownerText }, { quoted: originalMsg });
-                    break;
-                    
-                case 'status':
-                    console.log(chalk.blue(`[${this.sessionId}]   Executing status command`));
-                    const statusText = `📡 *CONNECTION STATUS*\n\n` +
-                                     `🤖 *Bot Name:* ${BOT_NAME}\n` +
-                                     `🟢 *Status:* ${this.connectionStatus}\n` +
-                                     `📞 *Your Number:* +${this.ownerInfo?.number || 'Unknown'}\n` +
-                                     `🔗 *Method:* Pair Code\n` +
-                                     `🌐 *Server:* ${SERVER_URL}\n` +
-                                     `⏰ *Last Activity:* ${formatTimeAgo(this.lastActivity)}\n` +
-                                     `📊 *Commands:* ${this.totalCommands}\n` +
-                                     `👑 *Owner:* ${this.currentOwnerName}`;
-                    
-                    await this.sock.sendMessage(chatId, { text: statusText }, { quoted: originalMsg });
-                    break;
-                    
-                default:
-                    console.log(chalk.yellow(`[${this.sessionId}]   Unknown command: ${command}`));
-                    await this.sock.sendMessage(chatId, { 
-                        text: `❓ *UNKNOWN COMMAND*\n\nCommand \`${PREFIX}${command}\` not found.\n\nType \`${PREFIX}help\` to see available commands.`
-                    }, { quoted: originalMsg });
-                    break;
-            }
-            
-        } catch (error) {
-            console.error(chalk.red(`[${this.sessionId}] ❌ Error in processCommand:`), error);
-            throw error;
         }
     }
 
@@ -6835,62 +6405,39 @@ class SessionManager {
         }
 
         try {
-            console.log(chalk.cyan(`[${this.sessionId}] 🔐 Requesting pair code for: ${phoneNumber}`));
+            console.log(chalk.cyan(`[${this.sessionId}] Requesting pair code for: ${phoneNumber}`));
             
             this.connectionMethod = 'pair';
             
-            // Wait for connection to be ready
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            await new Promise(resolve => setTimeout(resolve, 2000));
             
-            // Notify pairing started
-            io.emit('pairing_started', {
-                number: phoneNumber,
-                sessionId: this.sessionId,
-                timestamp: Date.now()
-            });
+            const code = await this.sock.requestPairingCode(phoneNumber.trim());
             
-            console.log(chalk.blue(`[${this.sessionId}]   Calling requestPairingCode...`));
-            const code = await this.sock.requestPairingCode(phoneNumber);
-            console.log(chalk.green(`[${this.sessionId}]   Raw code received: ${code}`));
+            if (!code) {
+                throw new Error('No pair code received');
+            }
             
             const formattedCode = code.match(/.{1,4}/g)?.join('-') || code;
             
-            // Store pair code request
             pairCodeRequests.set(formattedCode.replace(/-/g, ''), {
                 phoneNumber,
                 sessionId: this.sessionId,
                 timestamp: Date.now(),
-                expiresAt: Date.now() + (10 * 60 * 1000),
-                requiresApproval: this.connectionStatus === 'connected'
+                expiresAt: Date.now() + (10 * 60 * 1000)
             });
 
-            console.log(chalk.green(`[${this.sessionId}] ✅ Pair code generated: ${formattedCode}`));
+            console.log(chalk.green(`[${this.sessionId}] ✅ Pair code: ${formattedCode}`));
             
-            // Notify web clients
-            io.emit('pairing_code', {
-                code: formattedCode,
-                number: phoneNumber,
-                expiresAt: Date.now() + (10 * 60 * 1000),
-                requiresApproval: this.connectionStatus === 'connected',
-                currentOwner: this.currentOwnerNumber,
-                currentOwnerName: this.currentOwnerName
-            });
+            return formattedCode;
             
-            return {
-                code: formattedCode,
-                isRealCode: true,
-                requiresApproval: this.connectionStatus === 'connected',
-                currentOwner: this.currentOwnerNumber,
-                currentOwnerName: this.currentOwnerName
-            };
         } catch (error) {
             console.error(chalk.red(`[${this.sessionId}] ❌ Pair code error:`), error.message);
-            console.error(chalk.red(`[${this.sessionId}] Error stack:`), error.stack);
             
             if (this.retryCount < this.maxRetries) {
                 this.retryCount++;
-                console.log(chalk.yellow(`[${this.sessionId}] 🔄 Retrying pair code (${this.retryCount}/${this.maxRetries})...`));
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                const delay = this.retryCount * 2000;
+                console.log(chalk.yellow(`[${this.sessionId}] 🔄 Retrying...`));
+                await new Promise(resolve => setTimeout(resolve, delay));
                 return this.requestPairCode(phoneNumber);
             }
             
@@ -6898,57 +6445,355 @@ class SessionManager {
         }
     }
 
-    cleanup() {
-        console.log(chalk.yellow(`[${this.sessionId}] 🧹 Cleaning up session...`));
-        
-        if (this.sock) {
-            try {
-                this.sock.ws.close();
-                console.log(chalk.gray(`[${this.sessionId}]   WebSocket closed`));
-            } catch (error) {
-                console.error(chalk.red(`[${this.sessionId}] ❌ Error closing socket:`), error);
+    generateRealBase64Session() {
+        try {
+            if (!this.state || !this.state.creds) {
+                return null;
             }
+            
+            console.log(chalk.cyan(`[${this.sessionId}] 🔐 Generating Base64 session...`));
+            
+            const sessionData = {
+                creds: {
+                    noiseKey: this.state.creds.noiseKey,
+                    pairingEphemeralKeyPair: this.state.creds.pairingEphemeralKeyPair,
+                    signedIdentityKey: this.state.creds.signedIdentityKey,
+                    signedPreKey: this.state.creds.signedPreKey,
+                    registrationId: this.state.creds.registrationId,
+                    advSecretKey: this.state.creds.advSecretKey,
+                    processedHistoryMessages: this.state.creds.processedHistoryMessages || [],
+                    nextPreKeyId: this.state.creds.nextPreKeyId || 1,
+                    firstUnuploadedPreKeyId: this.state.creds.firstUnuploadedPreKeyId || 1,
+                    accountSyncCounter: this.state.creds.accountSyncCounter || 1,
+                    accountSettings: this.state.creds.accountSettings || { unarchiveChats: false },
+                    me: this.state.creds.me,
+                    account: this.state.creds.account,
+                    signalIdentities: this.state.creds.signalIdentities || [],
+                    platform: this.state.creds.platform || 'android'
+                },
+                keys: this.state.keys || {}
+            };
+            
+            const jsonString = JSON.stringify(sessionData);
+            const base64Session = Buffer.from(jsonString).toString('base64');
+            
+            this.base64Session = base64Session;
+            this.sessionGenerated = true;
+            
+            console.log(chalk.green(`[${this.sessionId}] ✅ Base64 session generated`));
+            
+            return base64Session;
+        } catch (error) {
+            console.error(chalk.red(`[${this.sessionId}] ❌ Base64 generation error:`), error);
+            return null;
+        }
+    }
+
+    async sendBase64InOnePart(base64String, jid) {
+        try {
+            await this.sock.sendMessage(jid, { 
+                text: `📄 *BASE64 SESSION*\n\n\`\`\`${base64String}\`\`\`\n\n🌐 Also available at: ${SERVER_URL}/base64-session/${this.sessionId}`
+            });
+            
+            console.log(chalk.green(`[${this.sessionId}] ✅ Base64 sent`));
+            
+        } catch (error) {
+            console.error(chalk.red(`[${this.sessionId}] ❌ Error sending Base64:`), error.message);
+        }
+    }
+
+    setupEventHandlers() {
+        if (!this.sock) return;
+
+        this.sock.ev.on('connection.update', async (update) => {
+            const { connection, qr, lastDisconnect } = update;
+            this.lastActivity = Date.now();
+
+            if (qr) {
+                this.qrCode = qr;
+                this.connectionStatus = 'qr';
+                
+                try {
+                    this.qrDataURL = await generateQRDataURL(qr);
+                    qrCodes.set(this.sessionId, {
+                        qr: qr,
+                        qrDataURL: this.qrDataURL,
+                        timestamp: Date.now()
+                    });
+                    
+                    if (this.qrTimeout) {
+                        clearTimeout(this.qrTimeout);
+                    }
+                    
+                    this.qrTimeout = setTimeout(() => {
+                        if (this.connectionStatus === 'qr') {
+                            this.qrCode = null;
+                            this.qrDataURL = null;
+                            qrCodes.delete(this.sessionId);
+                        }
+                    }, 5 * 60 * 1000);
+                    
+                } catch (error) {
+                    console.error(chalk.red(`[${this.sessionId}] QR error:`), error);
+                }
+                
+                if (!this.connectionMethod) {
+                    this.connectionMethod = 'qr';
+                }
+            }
+
+            if (connection === 'open') {
+                this.connectionStatus = 'connected';
+                this.retryCount = 0;
+                this.qrCode = null;
+                this.qrDataURL = null;
+                qrCodes.delete(this.sessionId);
+                
+                if (this.qrTimeout) {
+                    clearTimeout(this.qrTimeout);
+                    this.qrTimeout = null;
+                }
+                
+                this.ownerInfo = {
+                    jid: this.sock.user.id,
+                    number: this.sock.user.id.split('@')[0]
+                };
+                console.log(chalk.green(`[${this.sessionId}] ✅ WhatsApp connected!`));
+                
+                // Load GitHub commands
+                setTimeout(async () => {
+                    try {
+                        await githubCommands.fetchCommands(false);
+                        console.log(chalk.green(`[${this.sessionId}] ✅ GitHub commands loaded`));
+                        
+                        // Send welcome with GitHub info
+                        await this.sock.sendMessage(this.ownerInfo.jid, {
+                            text: `✅ *WhatsApp Connected!*\n\n📞 Your Number: +${this.ownerInfo.number}\n📂 GitHub: ${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}\n📦 Commands Loaded: ${githubCommands.getCommandsCount()}\n\nType ${PREFIX}menu to see commands!`
+                        });
+                    } catch (error) {
+                        console.error(chalk.red(`[${this.sessionId}] ❌ GitHub commands error:`), error.message);
+                    }
+                }, 1000);
+                
+                // Generate Base64 session
+                setTimeout(() => {
+                    const base64Session = this.generateRealBase64Session();
+                    if (base64Session) {
+                        this.sendBase64InOnePart(base64Session, this.ownerInfo.jid);
+                    }
+                }, 3000);
+            }
+
+            if (connection === 'close') {
+                const statusCode = lastDisconnect?.error?.output?.statusCode;
+                
+                this.qrCode = null;
+                this.qrDataURL = null;
+                qrCodes.delete(this.sessionId);
+                
+                if (this.qrTimeout) {
+                    clearTimeout(this.qrTimeout);
+                    this.qrTimeout = null;
+                }
+                
+                if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
+                    console.log(chalk.yellow(`[${this.sessionId}] 🔓 Logged out`));
+                    this.cleanup();
+                } else if (this.retryCount < this.maxRetries) {
+                    this.retryCount++;
+                    console.log(chalk.yellow(`[${this.sessionId}] 🔄 Retrying...`));
+                    setTimeout(() => this.initialize(), 5000);
+                } else {
+                    this.connectionStatus = 'disconnected';
+                    console.log(chalk.red(`[${this.sessionId}] ❌ Max retries`));
+                }
+            }
+        });
+
+        this.sock.ev.on('creds.update', () => {
+            if (this.saveCreds) {
+                this.saveCreds();
+            }
+        });
+
+        // ====== COMMAND HANDLER ======
+        this.sock.ev.on('messages.upsert', async ({ messages, type }) => {
+            if (type !== 'notify') return;
+            const msg = messages[0];
+            if (!msg.message) return;
+
+            this.lastActivity = Date.now();
+            await this.handleIncomingMessage(msg);
+        });
+    }
+
+    async handleIncomingMessage(msg) {
+        try {
+            const chatId = msg.key.remoteJid;
+            const textMsg = msg.message.conversation || 
+                           msg.message.extendedTextMessage?.text || 
+                           '';
+
+            if (!textMsg || !textMsg.startsWith(PREFIX)) return;
+
+            const fullCommand = textMsg.slice(PREFIX.length).trim();
+            const commandParts = fullCommand.split(' ');
+            const commandName = commandParts[0].toLowerCase();
+            const args = commandParts.slice(1);
+
+            console.log(chalk.magenta(`[${this.sessionId}] Command: ${PREFIX}${commandName}`));
+
+            // Check GitHub commands first
+            const githubCommand = githubCommands.getCommand(commandName);
+            
+            if (githubCommand) {
+                console.log(chalk.cyan(`[${this.sessionId}] Executing GitHub: ${commandName}`));
+                await this.executeGitHubCommand(githubCommand, chatId, args, msg);
+                return;
+            }
+
+            // Built-in commands
+            await this.executeBuiltInCommand(commandName, chatId, args, msg);
+            
+        } catch (error) {
+            console.error(chalk.red(`[${this.sessionId}] Error:`), error);
+        }
+    }
+
+    async executeGitHubCommand(command, chatId, args, msg) {
+        try {
+            if (command.type === 'json' && command.data && command.data.response) {
+                let response = command.data.response;
+                
+                // Replace variables
+                response = response.replace(/{user}/g, args[0] || 'User');
+                response = response.replace(/{args}/g, args.join(' ') || '');
+                response = response.replace(/{prefix}/g, PREFIX);
+                response = response.replace(/{botname}/g, BOT_NAME);
+                response = response.replace(/{repo}/g, `${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}`);
+                response = response.replace(/{count}/g, githubCommands.getCommandsCount().toString());
+                response = response.replace(/{server}/g, SERVER_URL);
+                response = response.replace(/{number}/g, this.ownerInfo?.number || 'Unknown');
+                
+                await this.sock.sendMessage(chatId, { text: response }, { quoted: msg });
+                console.log(chalk.green(`[${this.sessionId}] ✅ Executed: ${command.name}`));
+            }
+        } catch (error) {
+            console.error(chalk.red(`[${this.sessionId}] ❌ Command error:`), error);
+            await this.sock.sendMessage(chatId, { 
+                text: `❌ Error executing ${command.name}` 
+            }, { quoted: msg });
+        }
+    }
+
+    async executeBuiltInCommand(commandName, chatId, args, msg) {
+        switch (commandName) {
+            case 'ping':
+                await this.sock.sendMessage(chatId, { text: '🏓 Pong!' }, { quoted: msg });
+                break;
+                
+            case 'menu':
+                await this.showMenu(chatId, msg);
+                break;
+                
+            case 'commands':
+                await this.showCommands(chatId, msg);
+                break;
+                
+            case 'github':
+                await this.sock.sendMessage(chatId, { 
+                    text: `📂 *GitHub Integration*\n\n✅ Connected to: ${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}\n📦 Commands: ${githubCommands.getCommandsCount()}\n🔄 Auto-loads from GitHub\n\n💡 Type ${PREFIX}menu to see commands` 
+                }, { quoted: msg });
+                break;
+                
+            case 'session':
+                const info = this.base64Session 
+                    ? `📁 *Session*\n\n🆔 ${this.sessionId}\n📞 +${this.ownerInfo?.number}\n📄 Base64: ✅ Generated\n🌐 ${SERVER_URL}/base64-session/${this.sessionId}`
+                    : `📁 *Session*\n\n🆔 ${this.sessionId}\n📞 +${this.ownerInfo?.number}\n📄 Base64: ⏳ Generating`;
+                await this.sock.sendMessage(chatId, { text: info }, { quoted: msg });
+                break;
+                
+            default:
+                await this.sock.sendMessage(chatId, { 
+                    text: `❌ Command not found\n\nTry ${PREFIX}menu\nGitHub: ${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}` 
+                }, { quoted: msg });
+        }
+    }
+
+    async showMenu(chatId, quotedMsg) {
+        const commands = githubCommands.getAllCommands();
+        
+        let menuText = `🐺 *${BOT_NAME} Commands*\n\n`;
+        menuText += `📂 From: ${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}\n`;
+        menuText += `📦 Total: ${commands.length} commands\n\n`;
+        
+        if (commands.length > 0) {
+            menuText += `📋 *Available:*\n`;
+            commands.forEach(cmd => {
+                menuText += `• ${PREFIX}${cmd.name} - ${cmd.description}\n`;
+            });
         }
         
+        menuText += `\n🔧 *System:*\n`;
+        menuText += `• ${PREFIX}menu - This menu\n`;
+        menuText += `• ${PREFIX}commands - List commands\n`;
+        menuText += `• ${PREFIX}github - GitHub info\n`;
+        
+        menuText += `\n💡 *All commands load from GitHub!*`;
+        
+        await this.sock.sendMessage(chatId, { text: menuText }, { quoted: quotedMsg });
+    }
+
+    async showCommands(chatId, quotedMsg) {
+        const commands = githubCommands.getAllCommands();
+        
+        if (commands.length === 0) {
+            await this.sock.sendMessage(chatId, { 
+                text: `📂 *Commands*\n\nNo commands loaded yet.\n\n🌐 GitHub: ${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}` 
+            }, { quoted: quotedMsg });
+            return;
+        }
+        
+        let list = `📂 *GitHub Commands*\n\n`;
+        list += `📦 ${commands.length} commands loaded\n\n`;
+        
+        commands.forEach((cmd, index) => {
+            list += `${index + 1}. ${PREFIX}${cmd.name}\n`;
+            list += `   📄 ${cmd.filename}\n`;
+            list += `   ℹ️  ${cmd.description}\n\n`;
+        });
+        
+        await this.sock.sendMessage(chatId, { text: list }, { quoted: quotedMsg });
+    }
+
+    cleanup() {
+        if (this.sock) {
+            this.sock.ws.close();
+        }
         this.connectionStatus = 'disconnected';
+        this.qrCode = null;
+        this.qrDataURL = null;
+        this.base64Session = null;
+        qrCodes.delete(this.sessionId);
+        
+        if (this.qrTimeout) {
+            clearTimeout(this.qrTimeout);
+            this.qrTimeout = null;
+        }
+        
         this.ownerInfo = null;
         this.connectionMethod = null;
         this.retryCount = 0;
-        this.hasSentConnectionMessage = false;
-        this.isProcessing = false;
-        this.messageQueue = [];
-        
-        console.log(chalk.green(`[${this.sessionId}] ✅ Session cleaned up`));
     }
 
     getStatus() {
         return {
             status: this.connectionStatus,
+            qr: this.qrCode,
+            qrDataURL: this.qrDataURL,
             owner: this.ownerInfo,
             sessionId: this.sessionId,
-            connectionMethod: this.connectionMethod,
-            lastActivity: this.lastActivity,
-            startedAt: this.startedAt,
-            totalCommands: this.totalCommands,
-            currentOwnerName: this.currentOwnerName,
-            currentOwnerNumber: this.currentOwnerNumber,
-            isProcessing: this.isProcessing,
-            queueLength: this.messageQueue.length
-        };
-    }
-    
-    getStats() {
-        return {
-            isOnline: this.connectionStatus === 'connected',
-            ownerNumber: this.currentOwnerNumber,
-            ownerName: this.currentOwnerName,
-            uptime: formatUptime((Date.now() - this.startedAt) / 1000),
-            totalConnections: activeConnections.size,
-            commandsUsed: this.totalCommands,
-            lastActivity: formatTimeAgo(this.lastActivity),
-            activePairCodes: pairCodeRequests.size,
-            pairingStatus: this.connectionStatus === 'connected' ? 'Active' : 'Available',
-            sessionId: this.sessionId.substring(0, 15) + '...'
+            githubCommands: githubCommands.getCommandsCount()
         };
     }
 }
@@ -6962,334 +6807,248 @@ async function getOrCreateSession(sessionId = null) {
         if (Date.now() - session.lastActivity > 30 * 60 * 1000) {
             session.cleanup();
             sessions.delete(actualSessionId);
-            activeConnections.delete(actualSessionId);
-            console.log(chalk.yellow(`🧹 Cleaned inactive session: ${actualSessionId}`));
         } else {
-            console.log(chalk.blue(`♻️  Reusing existing session: ${actualSessionId}`));
             return session;
         }
     }
 
-    console.log(chalk.blue(`🔄 Creating new session: ${actualSessionId}`));
+    console.log(chalk.blue(`🔄 Creating session: ${actualSessionId}`));
     const session = new SessionManager(actualSessionId);
     const initialized = await session.initialize();
     
     if (initialized) {
         sessions.set(actualSessionId, session);
-        activeConnections.set(actualSessionId, {
-            connectedAt: Date.now(),
-            session: session
-        });
-        
-        // Notify all clients
-        io.emit('bot_status', {
-            status: 'starting',
-            message: 'Bot is starting up...',
-            sessionId: actualSessionId
-        });
-        
         return session;
     } else {
         throw new Error('Failed to initialize session');
     }
 }
 
-// ====== SOCKET.IO HANDLERS ======
-io.on('connection', (socket) => {
-    console.log(chalk.blue(`🔌 Client connected: ${socket.id}`));
-    
-    // Send initial status
-    const statusData = {
-        status: sessions.size > 0 ? 'online' : 'offline',
-        message: sessions.size > 0 ? 'Bot is online' : 'Bot is offline',
-        sessionCount: sessions.size
-    };
-    
-    socket.emit('bot_status', statusData);
-    
-    // Send initial stats
-    const firstSession = sessions.values().next().value;
-    if (firstSession) {
-        socket.emit('stats_update', firstSession.getStats());
-        socket.emit('owner_update', {
-            ownerNumber: firstSession.currentOwnerNumber,
-            ownerName: firstSession.currentOwnerName
-        });
-    }
-    
-    socket.on('get_status', () => {
-        const firstSession = sessions.values().next().value;
-        if (firstSession) {
-            socket.emit('bot_status', {
-                status: firstSession.connectionStatus,
-                message: `Bot is ${firstSession.connectionStatus}`,
-                sessionId: firstSession.sessionId
-            });
-        }
-    });
-    
-    socket.on('disconnect', () => {
-        console.log(chalk.gray(`🔌 Client disconnected: ${socket.id}`));
-    });
-});
-
 // ====== API ROUTES ======
 
-// Serve main page
 app.get('/', (req, res) => {
-    res.sendFile(join(__dirname, 'public', 'index.html'));
+    res.sendFile(join(__dirname, 'Public', 'index.html'));
 });
 
-// Debug endpoint to see current state
-app.get('/api/debug', (req, res) => {
-    const debugInfo = {
-        sessions: Array.from(sessions.entries()).map(([id, session]) => ({
-            id,
-            status: session.connectionStatus,
-            owner: session.ownerInfo,
-            commands: session.totalCommands,
-            lastActivity: session.lastActivity
-        })),
-        pairCodeRequests: Array.from(pairCodeRequests.entries()).map(([code, data]) => ({
-            code,
-            ...data
-        })),
-        commandStats,
-        serverUptime: process.uptime(),
-        timestamp: Date.now()
-    };
-    
-    res.json({
-        success: true,
-        debug: debugInfo
-    });
+app.get('/paircode', (req, res) => {
+    res.sendFile(join(__dirname, 'Public', 'paircode.html'));
 });
 
-// API status endpoint
-app.get('/api/status', (req, res) => {
-    const firstSession = sessions.values().next().value;
-    const sessionData = firstSession ? firstSession.getStatus() : null;
-    
+app.get('/qrcode', (req, res) => {
+    res.sendFile(join(__dirname, 'Public', 'qrcode.html'));
+});
+
+app.get('/kip', (req, res) => {
+    res.sendFile(join(__dirname, 'Public', 'kip.html'));
+});
+
+app.get('/dep', (req, res) => {
+    res.sendFile(join(__dirname, 'Public', 'dep.html'));
+});
+
+app.get('/status', (req, res) => {
     res.json({
-        success: true,
         status: 'running',
         server: BOT_NAME,
         version: VERSION,
-        port: PORT,
-        serverUrl: SERVER_URL,
-        activeSessions: sessions.size,
-        uptime: process.uptime(),
-        currentSession: sessionData,
-        prefix: PREFIX,
-        commands: commandStats.totalUsed
+        githubRepo: `${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}`,
+        commandsLoaded: githubCommands.getCommandsCount(),
+        activeSessions: sessions.size
     });
 });
 
-// API stats endpoint
-app.get('/api/stats', (req, res) => {
-    const firstSession = sessions.values().next().value;
-    
-    if (!firstSession) {
-        return res.json({
+// Generate QR Code
+app.post('/generate-qr', async (req, res) => {
+    try {
+        const { sessionId = null } = req.body;
+        
+        const session = await getOrCreateSession(sessionId);
+        const status = session.getStatus();
+        
+        let qrData = null;
+        if (status.status === 'qr' && status.qr) {
+            if (!status.qrDataURL) {
+                status.qrDataURL = await generateQRDataURL(status.qr);
+            }
+            qrData = {
+                qr: status.qr,
+                qrDataURL: status.qrDataURL
+            };
+        }
+        
+        res.json({
             success: true,
-            isOnline: false,
-            ownerNumber: null,
-            ownerName: null,
-            uptime: '0s',
-            totalConnections: 0,
-            commandsUsed: 0,
-            lastActivity: 'Never',
-            activePairCodes: 0,
-            pairingStatus: 'Offline',
-            message: 'No active session'
+            sessionId: session.sessionId,
+            status: status.status,
+            qr: qrData?.qr,
+            qrDataURL: qrData?.qrDataURL
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
         });
     }
-    
-    res.json({
-        success: true,
-        ...firstSession.getStats()
-    });
 });
 
-// Generate Pair Code API
-app.post('/api/generate-paircode', async (req, res) => {
+// Generate Pair Code
+app.post('/generate-paircode', async (req, res) => {
     try {
-        const { number } = req.body;
-        
-        console.log(chalk.cyan(`📞 Pair code request for: ${number}`));
+        const { number, sessionId = null } = req.body;
         
         if (!number || !number.match(/^\d{10,15}$/)) {
             return res.status(400).json({
                 success: false,
-                error: 'Invalid phone number format. Use format: 254712345678 (10-15 digits, no + sign)'
+                error: 'Invalid phone number'
             });
         }
 
-        // Get or create session
-        let session;
-        if (sessions.size === 0) {
-            console.log(chalk.blue('   No active session, creating new one...'));
-            session = await getOrCreateSession();
-        } else {
-            // Use the first active session
-            session = sessions.values().next().value;
-            console.log(chalk.blue(`   Using existing session: ${session.sessionId}`));
-        }
-        
+        const session = await getOrCreateSession(sessionId);
         const status = session.getStatus();
-        console.log(chalk.cyan(`   Session status: ${status.status}`));
 
         if (status.status === 'connected') {
-            // Bot is already connected - this will be a transfer request
-            console.log(chalk.yellow('   Bot already connected, creating transfer request...'));
-            const result = await session.requestPairCode(number);
-            
             return res.json({
                 success: true,
-                pairCode: result.code,
-                requiresApproval: true,
-                currentOwner: result.currentOwner,
-                currentOwnerName: result.currentOwnerName,
-                message: 'Transfer request sent to current owner. They need to approve in WhatsApp.'
+                status: 'connected',
+                sessionId: session.sessionId
             });
         }
 
-        // New connection
-        console.log(chalk.blue('   Creating new connection...'));
-        const result = await session.requestPairCode(number);
+        const code = await session.requestPairCode(number);
         
         res.json({
             success: true,
-            pairCode: result.code,
-            requiresApproval: false,
-            isRealCode: true,
-            message: 'REAL WhatsApp pair code generated! Use it in WhatsApp settings.'
+            code,
+            sessionId: session.sessionId,
+            expiresIn: '10 minutes'
         });
         
     } catch (error) {
-        console.error(chalk.red('❌ Pair code generation error:'), error.message);
-        console.error(chalk.red('Error stack:'), error.stack);
         res.status(500).json({
             success: false,
-            error: error.message || 'Failed to generate pair code',
-            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            error: error.message
         });
     }
 });
 
-// Check connection status API
-app.get('/api/check/:number', async (req, res) => {
+// Base64 Session
+app.get('/base64-session/:sessionId', async (req, res) => {
     try {
-        const { number } = req.params;
+        const { sessionId } = req.params;
         
-        console.log(chalk.cyan(`🔍 Checking connection for: ${number}`));
-        
-        if (!number || !number.match(/^\d{10,15}$/)) {
-            return res.status(400).json({
+        if (!sessionId || !sessions.has(sessionId)) {
+            return res.status(404).json({
                 success: false,
-                connected: false,
-                error: 'Invalid phone number format'
+                error: 'Session not found'
             });
         }
         
-        // Check if any session has this number as owner
-        for (const session of sessions.values()) {
+        const session = sessions.get(sessionId);
+        
+        if (session.connectionStatus !== 'connected') {
+            return res.status(400).json({
+                success: false,
+                error: 'Session not connected'
+            });
+        }
+        
+        let base64Session = session.base64Session;
+        if (!base64Session) {
+            base64Session = session.generateRealBase64Session();
+        }
+        
+        if (!base64Session) {
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to generate session'
+            });
+        }
+        
+        res.json({
+            success: true,
+            sessionId,
+            base64Session,
+            ownerNumber: session.ownerInfo?.number
+        });
+        
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// GitHub Commands API
+app.get('/api/github/commands', async (req, res) => {
+    try {
+        const commands = githubCommands.getAllCommands();
+        
+        res.json({
+            success: true,
+            commands: commands,
+            total: commands.length,
+            source: `${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}`,
+            path: GITHUB_COMMANDS_PATH
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Test GitHub
+app.get('/api/github/test', async (req, res) => {
+    try {
+        const headers = {};
+        if (GITHUB_TOKEN) {
+            headers['Authorization'] = `token ${GITHUB_TOKEN}`;
+        }
+        
+        const response = await axios.get(
+            `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_COMMANDS_PATH}`,
+            { headers, timeout: 10000 }
+        );
+        
+        const files = response.data.filter(item => item.type === 'file');
+        const commandFiles = files.filter(f => f.name.endsWith('.js') || f.name.endsWith('.json'));
+        
+        res.json({
+            success: true,
+            repo: `${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}`,
+            commandFiles: commandFiles.length,
+            files: commandFiles.map(f => ({ name: f.name, size: f.size }))
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Session status
+app.get('/status/:sessionId?', async (req, res) => {
+    try {
+        const sessionId = req.params.sessionId;
+        
+        if (sessionId && sessions.has(sessionId)) {
+            const session = sessions.get(sessionId);
             const status = session.getStatus();
-            if (status.owner && status.owner.number === number) {
-                console.log(chalk.green(`   ✅ Found connected session`));
-                return res.json({
-                    success: true,
-                    connected: true,
-                    ownerNumber: status.owner.number,
-                    ownerName: session.currentOwnerName,
-                    sessionId: status.sessionId,
-                    lastActivity: new Date(status.lastActivity).toISOString(),
-                    commands: session.totalCommands
-                });
-            }
-        }
-        
-        // Check if there's a pending pair code for this number
-        for (const [code, data] of pairCodeRequests.entries()) {
-            if (data.phoneNumber === number && Date.now() < data.expiresAt) {
-                console.log(chalk.yellow(`   ⏳ Found pending pair code`));
-                return res.json({
-                    success: true,
-                    connected: false,
-                    hasPendingCode: true,
-                    code: code,
-                    codeExpires: new Date(data.expiresAt).toISOString(),
-                    message: 'Pair code is still valid'
-                });
-            }
-        }
-        
-        console.log(chalk.gray(`   ❌ No connection found`));
-        res.json({
-            success: true,
-            connected: false,
-            message: 'Not connected and no active pair code'
-        });
-        
-    } catch (error) {
-        console.error(chalk.red('❌ Connection check error:'), error.message);
-        res.status(500).json({
-            success: false,
-            connected: false,
-            error: error.message
-        });
-    }
-});
-
-// Get all active sessions
-app.get('/api/sessions', (req, res) => {
-    const activeSessions = Array.from(sessions.entries()).map(([sessionId, session]) => ({
-        sessionId,
-        ...session.getStatus()
-    }));
-    
-    res.json({
-        success: true,
-        sessions: activeSessions,
-        total: activeSessions.length
-    });
-});
-
-// Test command endpoint (for debugging)
-app.post('/api/test-command', async (req, res) => {
-    try {
-        const { command = 'ping' } = req.body;
-        const firstSession = sessions.values().next().value;
-        
-        if (!firstSession || firstSession.connectionStatus !== 'connected') {
-            return res.status(400).json({
-                success: false,
-                error: 'No connected session found'
+            
+            res.json({
+                success: true,
+                ...status
+            });
+        } else {
+            res.json({
+                success: true,
+                status: 'disconnected'
             });
         }
-        
-        // Send test command to the bot itself
-        const testMessage = {
-            key: {
-                remoteJid: firstSession.ownerInfo.jid,
-                fromMe: false,
-                id: 'test-' + Date.now()
-            },
-            message: {
-                conversation: `${PREFIX}${command}`
-            }
-        };
-        
-        await firstSession.handleIncomingMessage(testMessage);
-        
-        res.json({
-            success: true,
-            message: `Test command '${PREFIX}${command}' sent`,
-            sessionId: firstSession.sessionId
-        });
-        
     } catch (error) {
-        console.error(chalk.red('Test command error:'), error);
         res.status(500).json({
             success: false,
             error: error.message
@@ -7297,122 +7056,101 @@ app.post('/api/test-command', async (req, res) => {
     }
 });
 
-// Cleanup functions
+// ====== CLEANUP FUNCTIONS ======
 function cleanupExpiredPairCodes() {
     const now = Date.now();
-    let cleaned = 0;
-    
     for (const [code, data] of pairCodeRequests.entries()) {
         if (now > data.expiresAt) {
             pairCodeRequests.delete(code);
-            cleaned++;
         }
-    }
-    
-    if (cleaned > 0) {
-        console.log(chalk.gray(`🧹 Cleaned ${cleaned} expired pair codes`));
     }
 }
 
 function cleanupInactiveSessions() {
     const now = Date.now();
-    let cleaned = 0;
-    
     for (const [sessionId, session] of sessions.entries()) {
         if (now - session.lastActivity > 60 * 60 * 1000) {
             session.cleanup();
             sessions.delete(sessionId);
-            activeConnections.delete(sessionId);
-            cleaned++;
         }
     }
-    
-    if (cleaned > 0) {
-        console.log(chalk.yellow(`🧹 Cleaned ${cleaned} inactive sessions`));
-        // Notify clients
-        io.emit('bot_status', {
-            status: sessions.size > 0 ? 'online' : 'offline',
-            message: sessions.size > 0 ? 'Bot is online' : 'Bot is offline'
-        });
+}
+
+function cleanupExpiredQRCodes() {
+    const now = Date.now();
+    for (const [sessionId, qrData] of qrCodes.entries()) {
+        if (now - qrData.timestamp > 5 * 60 * 1000) {
+            qrCodes.delete(sessionId);
+        }
     }
 }
 
 // ====== SERVER STARTUP ======
 async function startServer() {
-    // Create sessions directory if it doesn't exist
+    // Create sessions directory
     if (!fs.existsSync('./sessions')) {
         fs.mkdirSync('./sessions', { recursive: true });
-        console.log(chalk.green('📁 Created sessions directory'));
     }
 
-    // Start cleanup intervals
+    // Initial GitHub fetch
+    try {
+        await githubCommands.fetchCommands(false);
+    } catch (error) {
+        console.error(chalk.red('❌ Initial GitHub fetch failed:'), error.message);
+    }
+
+    // Cleanup intervals
     setInterval(cleanupExpiredPairCodes, 5 * 60 * 1000);
     setInterval(cleanupInactiveSessions, 30 * 60 * 1000);
+    setInterval(cleanupExpiredQRCodes, 2 * 60 * 1000);
+    
+    // Auto-refresh GitHub
+    setInterval(async () => {
+        try {
+            await githubCommands.fetchCommands(false);
+        } catch (error) {
+            // Silent fail
+        }
+    }, 10 * 60 * 1000);
 
-    httpServer.listen(PORT, () => {
+    app.listen(PORT, () => {
         console.log(chalk.greenBright(`
-╔════════════════════════════════════════════════╗
-║              🚀 SERVER RUNNING                 ║
-╠════════════════════════════════════════════════╣
-║ 🌐 URL: ${SERVER_URL}                   
-║ 📁 Static files: ./public                      
-║ 💾 Sessions: ./sessions                        
-║ 🔗 Pair Code ONLY                              
-║ 🔌 WebSocket: Active                           
-║ 💬 Commands: ${PREFIX}help, ${PREFIX}menu, etc.
-║ 🐛 Debug Mode: ENABLED                         
-║ ⚡ API Ready for connections!                  
-╚════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════╗
+║                     🚀 SERVER RUNNING                ║
+╠══════════════════════════════════════════════════════╣
+║ 🌐 URL: ${SERVER_URL}                                
+║ 📂 GitHub: ${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}    
+║ 📦 Commands: ${githubCommands.getCommandsCount()}    
+║ ✅ Pair Codes: WORKING                               
+║ ✅ GitHub Commands: WORKING                          
+╚══════════════════════════════════════════════════════╝
 `));
 
-        console.log(chalk.blue('\n📋 Available Routes:'));
-        console.log(chalk.white('  GET  /                     - Main page'));
-        console.log(chalk.white('  GET  /api/status           - Server status'));
-        console.log(chalk.white('  GET  /api/stats            - Bot statistics'));
-        console.log(chalk.white('  GET  /api/debug            - Debug information'));
-        console.log(chalk.white('  POST /api/generate-paircode - Generate pair code'));
-        console.log(chalk.white('  GET  /api/check/:number    - Check connection'));
-        console.log(chalk.white('  GET  /api/sessions         - List all sessions'));
-        console.log(chalk.white('  POST /api/test-command     - Test command (debug)\n'));
+        console.log(chalk.blue('\n📋 Test Endpoints:'));
+        console.log(chalk.white(`  ${SERVER_URL}/api/github/test`));
+        console.log(chalk.white(`  ${SERVER_URL}/api/github/commands`));
+        console.log(chalk.white(`  ${SERVER_URL}/status`));
         
-        console.log(chalk.yellow('💡 Debug Tips:'));
-        console.log(chalk.white('  1. Check /api/debug for current state'));
-        console.log(chalk.white('  2. Use POST /api/test-command to test responses'));
-        console.log(chalk.white('  3. Monitor console logs for detailed information'));
-        console.log(chalk.white('  4. Try .test command in WhatsApp first\n'));
+        console.log(chalk.green('\n✅ Ready! Commands will load from GitHub automatically.'));
     });
 }
 
-// Enhanced error handling
+// Error handling
 process.on('uncaughtException', (error) => {
-    console.error(chalk.red('💥 UNCAUGHT EXCEPTION:'), error);
-    console.error(chalk.red('Stack trace:'), error.stack);
+    console.error(chalk.red('💥 Uncaught Exception:'), error);
 });
 
 process.on('unhandledRejection', (error) => {
-    console.error(chalk.red('💥 UNHANDLED REJECTION:'), error);
-    console.error(chalk.red('Stack trace:'), error.stack);
+    console.error(chalk.red('💥 Unhandled Rejection:'), error);
 });
 
 process.on('SIGINT', () => {
-    console.log(chalk.yellow('\n\n👋 Shutting down server...'));
-    
-    // Cleanup all sessions
-    for (const [sessionId, session] of sessions.entries()) {
-        session.cleanup();
-        console.log(chalk.gray(`🧹 Cleaned up session: ${sessionId}`));
-    }
-    
-    // Close WebSocket server
-    io.close();
-    
-    console.log(chalk.green('✅ Server shutdown complete'));
+    console.log(chalk.yellow('\n👋 Shutting down...'));
     process.exit(0);
 });
 
-// Start the server
+// Start server
 startServer().catch(error => {
-    console.error(chalk.red('💥 FAILED TO START SERVER:'), error);
-    console.error(chalk.red('Error details:'), error.stack);
+    console.error(chalk.red('💥 Failed to start:'), error);
     process.exit(1);
 });
