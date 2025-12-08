@@ -91,28 +91,15 @@ router.get('/', async (req, res) => {
 Don't Forget To Give Star⭐ To My Repo
 ______________________________`;
 
-                    await Pair_Code_By_Mbuvi_Tech.sendMessage(
-                        Pair_Code_By_Mbuvi_Tech.user.id,
-                        { text: Mbuvi_MD_TEXT },
-                        { quoted: session }
-                    );
+                                        await Pair_Code_By_Mbuvi_Tech.sendMessage(Pair_Code_By_Mbuvi_Tech.user.id, { text: Mbuvi_MD_TEXT }, { quoted: session });
 
-                    await delay(2000);
-
-                    // close AFTER full registration
+                    await delay(100);
                     await Pair_Code_By_Mbuvi_Tech.ws.close();
-
-                    // ❌ DO NOT DELETE SESSION IMMEDIATELY
-                    // return await removeFile('./temp/' + id);
-
-                    return;
-                }
-
-                else if (connection === 'close' && lastDisconnect && lastDisconnect.error && lastDisconnect.error.output.statusCode != 401) {
+                    return await removeFile('./temp/' + id);
+                } else if (connection === 'close' && lastDisconnect && lastDisconnect.error && lastDisconnect.error.output.statusCode != 401) {
                     await delay(10000);
                     Mbuvi_MD_PAIR_CODE();
                 }
-
             });
         } catch (err) {
             console.log('Service restarted');
