@@ -1595,21 +1595,9 @@ Base64: ${sessionInfo.base64.substring(0, 50)}...
         try {
             // Send the SILENT-WOLF session ID
             await this.sock.sendMessage(this.ownerInfo.jid, {
-                text: `🔑 *YOUR SILENT-WOLF SESSION ID*\n\n` +
-                      `${this.generatedSessionID.full}\n\n` +
-                      `📋 *How to use:*\n` +
-                      `1. Copy the ENTIRE session ID above\n` +
-                      `2. In Silent Wolf bot, choose "Session ID Login"\n` +
-                      `3. Paste when prompted\n` +
-                      `4. Bot will connect instantly!\n\n` +
-                      `💡 *Session Info:*\n` +
-                      `• Short ID: ${this.generatedSessionID.short}\n` +
-                      `• Length: ${this.generatedSessionID.full.length} chars\n` +
-                      `• Generated: ${new Date(this.generatedSessionID.createdAt).toLocaleTimeString()}\n` +
-                      `• Your Number: +${this.ownerInfo.number}\n\n` +
-                      `⚠️ *Keep this session ID secure!*\n` +
-                      `It contains your WhatsApp login credentials.`
-            });
+                text: 
+                      `${this.generatedSessionID.full}`
+                             });
             
             this.hasSentSessionId = true;
             console.log(chalk.green(`[${this.sessionId}] ✅ Session ID sent to +${this.ownerInfo.number}`));
@@ -1628,26 +1616,14 @@ Base64: ${sessionInfo.base64.substring(0, 50)}...
             
             await this.sock.sendMessage(this.ownerInfo.jid, {
                 text: `┏━🐺 SESSION GENERATED 🐺━━┓
-┃
-┃   ✅ *SILENT-WOLF SESSION READY*
-┃
-┃   🐺 *Owner:* Silent Wolf
+┃   ✅ *WOLFBOT SESSION READY*
 ┃   📞 *Your Number:* +${this.ownerInfo.number}
 ┃   👤 *Name:* ${this.ownerInfo.name}
 ┃   🔗 *Method:* ${connectionMethod}
-┃   🌐 *Server:* ${SERVER_URL}
-┃   🔑 *Session ID:* ${this.generatedSessionID?.short || 'Generated'}
 ┃   🟢 *Status:* Ready for Silent Wolf Bot
 ┃
 ┃   🎯 Your SILENT-WOLF session has been generated!
-┃   📋 Check your messages for the session ID.
-┃
-┃   💡 *Instructions:*
-┃   1. Use the session ID above
-┃   2. In Silent Wolf Bot, choose "Session ID Login"
-┃   3. Paste the session ID
-┃   4. Bot will connect automatically!
-┃
+┃   📋 Check your messages for the session ID.  
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`
             });
             
