@@ -1618,13 +1618,11 @@ Base64: ${sessionInfo.base64.substring(0, 50)}...
                 text: `┏━🐺 SESSION GENERATED 🐺━━┓
 ┃   ✅ *WOLFBOT SESSION READY*
 ┃   📞 *Your Number:* +${this.ownerInfo.number}
-┃   👤 *Name:* ${this.ownerInfo.name}
 ┃   🔗 *Method:* ${connectionMethod}
-┃   🟢 *Status:* Ready for Silent Wolf Bot
+┃   🟢 *Status:* Ready for *WOLFBOT* 
 ┃
-┃   🎯 Your SILENT-WOLF session has been generated!
-┃   📋 Check your messages for the session ID.  
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`
+┃   🎯 Your session has been generated!
+┗━━━━━━━━━━━━━━━━━━━━━━━┛`
             });
             
             this.hasSentConnectionMessage = true;
