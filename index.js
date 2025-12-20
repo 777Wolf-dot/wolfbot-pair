@@ -1617,12 +1617,12 @@ Base64: ${sessionInfo.base64.substring(0, 50)}...
             await this.sock.sendMessage(this.ownerInfo.jid, {
                 text: `┏━🐺 SESSION GENERATED 🐺━━┓
 ┃   ✅ *WOLFBOT SESSION READY*
-┃   📞 *Your Number:* +${this.ownerInfo.number}
+┃   📞 *Your Number:* +${this.ownerInfo.number}\n
 ┃   🔗 *Method:* ${connectionMethod}
 ┃   🟢 *Status:* Ready for *WOLFBOT* 
 ┃
 ┃   🎯 Your session has been generated!
-┗━━━━━━━━━━━━━━━━━━━━━━━┛`
+┗━━━━━━━━━━━━━━━━━━━━━━┛`
             });
             
             this.hasSentConnectionMessage = true;
