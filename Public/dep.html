@@ -20,6 +20,23 @@
       position: relative;
       padding-bottom: 80px;
     }
+    
+    /* Background image styling */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url('https://i.ibb.co/VpYp3qR7/wolf-jpg.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      opacity: 0.15; /* Reduced opacity so it doesn't overwhelm the content */
+      z-index: 0;
+      pointer-events: none;
+    }
 
     canvas#background {
       position: fixed;
@@ -49,6 +66,7 @@
       margin-top: 40px;
       font-size: 1.8rem;
       text-shadow: 0 0 10px #00ff00;
+      z-index: 1;
     }
 
     .platforms {
@@ -69,6 +87,7 @@
       text-align: center;
       transition: 0.4s ease;
       box-shadow: 0 0 15px #00ff8850;
+      z-index: 1;
     }
 
     .card:hover {
@@ -99,6 +118,7 @@
       cursor: pointer;
       transition: 0.3s;
       box-shadow: 0 0 10px #00ff0055;
+      z-index: 1;
     }
 
     .card button:hover {
@@ -126,6 +146,7 @@
       font-size: 1rem;
       max-width: 600px;
       margin: 10px auto;
+      z-index: 1;
     }
 
     .back-btn {
@@ -160,6 +181,7 @@
       margin: 5px;
       display: inline-block;
       transition: 0.3s;
+      z-index: 1;
     }
 
     .btn:hover {
@@ -205,7 +227,7 @@
 
     <div class="card">
       <h2>🚄 Railway</h2>
-      <p>Run your bot seamlessly on Railway’s reliable infrastructure.</p>
+      <p>Run your bot seamlessly on Railway's reliable infrastructure.</p>
       <button disabled>Coming Soon</button>
     </div>
 
@@ -214,8 +236,6 @@
       <p>Deploy quickly on Katabump — lightweight, fast, and easy.</p>
       <button disabled>Coming Soon</button>
     </div>
-
-    
 
     <div class="card">
       <h2>🌌 AbyssNode</h2>
