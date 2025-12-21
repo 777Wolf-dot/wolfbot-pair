@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WhatsApp QR Pairing | Silent Wolf</title>
+    <title>WhatsApp QR Pairing | Silent Wolf - Christmas Edition</title>
     <!-- Load Poppins and QR Code library -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
@@ -16,20 +16,21 @@
       }
       
       body {
-        background: #000;
-        color: #00ff99;
         font-family: 'Poppins', sans-serif;
+        background: linear-gradient(180deg, #0a0a0a 0%, #0f2b1d 100%);
+        color: #00ff00;
         min-height: 100vh;
         display: flex;
         justify-content: center;
         align-items: center;
         flex-direction: column;
-        overflow-y: auto;
         position: relative;
+        overflow-x: hidden;
         padding: 20px;
+        text-align: center;
       }
       
-      /* Background image styling */
+      /* Background image styling - Christmas theme */
       body::before {
         content: '';
         position: fixed;
@@ -37,83 +38,125 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-image: url('https://i.ibb.co/VpYp3qR7/wolf-jpg.jpg');
+        background-image: url('https://i.ibb.co/1fCv6Mhw/wolftechxmas-jpg.jpg');
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
-        opacity: 0.15; /* Reduced opacity so it doesn't overwhelm the content */
+        opacity: 0.15;
         z-index: 0;
         pointer-events: none;
       }
       
+      canvas#background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 0;
+      }
+      
       h1 {
-        font-size: 2rem;
-        margin-bottom: 15px;
-        text-align: center;
-        text-shadow: 0 0 15px #00ff88;
+        font-size: 2.5rem;
+        text-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00;
         z-index: 1;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        background: linear-gradient(45deg, #00ff00, #ff0000, #ffffff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
       }
       
       h2 {
-        font-size: 1.2rem;
-        margin-bottom: 20px;
+        font-size: 1.4rem;
+        margin-bottom: 25px;
         opacity: 0.9;
         text-align: center;
         z-index: 1;
+        color: #b8f5d2;
+        text-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
       }
 
-      /* Statistics Container */
+      /* Christmas header */
+      .christmas-header {
+        z-index: 1;
+        margin-bottom: 20px;
+      }
+
+      .merry-christmas {
+        font-size: 1.5rem;
+        color: #ff0000;
+        text-shadow: 0 0 15px #ff0000;
+        animation: blink 1s infinite;
+        margin-bottom: 10px;
+        z-index: 1;
+      }
+
+      @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
+
+      /* Statistics Container - Christmas themed */
       .stats-container {
         width: 100%;
         max-width: 900px;
-        margin-bottom: 25px;
+        margin-bottom: 30px;
         z-index: 1;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        padding: 20px;
+        border: 2px solid #00ff00;
+        box-shadow: 0 0 25px rgba(0, 255, 136, 0.3);
+        backdrop-filter: blur(10px);
       }
 
       .stats {
         display: flex;
         flex-wrap: wrap;
         justify-content: center;
-        gap: 15px;
+        gap: 20px;
         margin-bottom: 15px;
         width: 100%;
       }
 
       .stat-card {
-        background: rgba(0, 255, 0, 0.08);
-        border: 1px solid rgba(0, 255, 0, 0.3);
-        border-radius: 12px;
-        padding: 15px;
+        background: rgba(0, 255, 0, 0.1);
+        border: 2px solid rgba(0, 255, 0, 0.4);
+        border-radius: 15px;
+        padding: 20px 15px;
         text-align: center;
         flex: 1;
-        min-width: 150px;
+        min-width: 160px;
         max-width: 200px;
-        box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
-        transition: all 0.3s ease;
+        box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+        transition: all 0.4s ease;
         z-index: 1;
+        backdrop-filter: blur(5px);
       }
 
       .stat-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 0 20px rgba(0, 255, 0, 0.4);
-        border-color: rgba(0, 255, 0, 0.6);
+        transform: translateY(-5px) scale(1.03);
+        box-shadow: 0 0 20px #00ff00, 0 0 30px #ff0000;
+        background: rgba(255, 255, 255, 0.15);
+        border-color: #ff0000;
       }
 
       .stat-value {
-        font-size: 1.5rem;
+        font-size: 1.8rem;
         font-weight: bold;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
         text-shadow: 0 0 10px currentColor;
-        height: 40px;
+        height: 45px;
         display: flex;
         align-items: center;
         justify-content: center;
+        color: #00ff88;
       }
 
       .stat-label {
-        font-size: 0.85rem;
+        font-size: 0.9rem;
         opacity: 0.9;
-        color: #00ff88;
+        color: #aefad6;
         height: 40px;
         display: flex;
         align-items: center;
@@ -138,20 +181,20 @@
 
       .connection-dot {
         display: inline-block;
-        width: 8px;
-        height: 8px;
+        width: 10px;
+        height: 10px;
         border-radius: 50%;
         margin-right: 5px;
       }
 
       .dot-online {
         background-color: #00ff00;
-        box-shadow: 0 0 8px #00ff00;
+        box-shadow: 0 0 10px #00ff00;
       }
 
       .dot-offline {
         background-color: #ff4444;
-        box-shadow: 0 0 8px #ff4444;
+        box-shadow: 0 0 10px #ff4444;
       }
 
       @keyframes pulse {
@@ -159,8 +202,9 @@
         50% { opacity: 0.5; }
       }
 
+      /* Session Input Container */
       #session-input-container {
-        margin-bottom: 20px;
+        margin-bottom: 25px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -169,41 +213,66 @@
         z-index: 1;
       }
       
+      #session-input-container label {
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+        color: #00ff88;
+        text-shadow: 0 0 8px rgba(0, 255, 0, 0.4);
+      }
+      
       #session-id {
-        padding: 12px 15px;
+        padding: 15px 20px;
         border: 2px solid #00ff00;
-        border-radius: 8px;
-        background: transparent;
+        border-radius: 12px;
+        background: rgba(0, 255, 0, 0.08);
         color: #00ff00;
-        font-size: 1rem;
+        font-size: 1.1rem;
         width: 100%;
         margin-top: 10px;
         text-align: center;
         z-index: 1;
+        box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+        transition: 0.3s;
+        backdrop-filter: blur(5px);
       }
       
       #session-id:focus {
         outline: none;
-        box-shadow: 0 0 15px #00ff00;
+        box-shadow: 0 0 20px #00ff00;
+        border-color: #ff0000;
+        transform: translateY(-2px);
       }
 
-      /* QR Container */
+      /* QR Container - Christmas themed */
       #qr-container {
-        margin-top: 20px;
-        background: rgba(0, 255, 0, 0.08);
-        padding: 20px;
+        margin: 20px 0 30px;
+        background: rgba(0, 255, 0, 0.1);
+        padding: 25px;
         border-radius: 20px;
-        box-shadow: 0 0 25px rgba(0, 255, 0, 0.25);
+        box-shadow: 0 0 30px rgba(0, 255, 0, 0.4);
         display: flex;
         justify-content: center;
         align-items: center;
         flex-direction: column;
-        min-width: 280px;
-        min-height: 280px;
-        margin: 20px 0;
+        min-width: 300px;
+        min-height: 300px;
         width: 100%;
-        max-width: 320px;
+        max-width: 340px;
         z-index: 1;
+        border: 2px solid #00ff00;
+        transition: all 0.4s ease;
+        backdrop-filter: blur(10px);
+        animation: christmasGlow 2s infinite alternate;
+      }
+
+      #qr-container:hover {
+        box-shadow: 0 0 40px rgba(0, 255, 0, 0.6), 0 0 50px rgba(255, 0, 0, 0.3);
+        transform: translateY(-5px);
+      }
+
+      @keyframes christmasGlow {
+        from { box-shadow: 0 0 20px rgba(0, 255, 0, 0.3); }
+        to { box-shadow: 0 0 35px rgba(0, 255, 0, 0.6), 0 0 45px rgba(255, 0, 0, 0.2); }
       }
 
       /* Wrapper for the canvas to ensure proper fit */
@@ -218,20 +287,23 @@
 
       /* Style for the QR code canvas */
       #qrCanvas {
-        border-radius: 10px;
-        border: 2px solid #00ff00;
+        border-radius: 15px;
+        border: 3px solid #00ff00;
         width: 100%;
         height: auto;
         max-width: 280px;
+        box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+        background: white;
       }
 
       #loader {
-        border: 4px solid rgba(0, 255, 0, 0.2);
-        border-top: 4px solid #00ff00;
+        border: 5px solid rgba(0, 255, 0, 0.2);
+        border-top: 5px solid #00ff00;
         border-radius: 50%;
-        width: 50px;
-        height: 50px;
+        width: 60px;
+        height: 60px;
         animation: spin 1s linear infinite;
+        box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
       }
       
       @keyframes spin {
@@ -240,27 +312,30 @@
         }
       }
 
+      /* Buttons - Christmas themed */
       .btn {
-        margin-top: 10px;
-        padding: 12px 25px;
+        margin-top: 15px;
+        padding: 15px 30px;
         border: 2px solid #00ff00;
-        border-radius: 8px;
-        background: transparent;
+        border-radius: 12px;
+        background: rgba(0, 255, 0, 0.1);
         color: #00ff00;
         font-weight: bold;
         cursor: pointer;
-        transition: 0.3s ease;
-        box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
-        font-size: 1rem;
+        transition: 0.4s ease;
+        box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+        font-size: 1.1rem;
         width: 100%;
-        max-width: 300px;
+        max-width: 320px;
         z-index: 1;
+        backdrop-filter: blur(5px);
       }
       
       .btn:hover:not(:disabled) {
         background: #00ff00;
         color: #000;
-        box-shadow: 0 0 25px #00ff00;
+        box-shadow: 0 0 30px #00ff00, 0 0 40px #ff0000;
+        transform: translateY(-3px);
       }
       
       .btn:disabled {
@@ -269,39 +344,41 @@
       }
 
       .back-btn {
-        padding: 10px 20px;
-        border: 1px solid #00ff00;
-        border-radius: 8px;
+        padding: 12px 25px;
+        border: 2px solid #00ff00;
+        border-radius: 12px;
+        background: rgba(0, 255, 0, 0.1);
         color: #00ff00;
         text-decoration: none;
-        transition: 0.3s;
-        font-size: 0.9rem;
-        margin-top: 20px;
+        transition: 0.4s;
+        font-size: 1rem;
+        margin-top: 25px;
         text-align: center;
         z-index: 1;
+        backdrop-filter: blur(5px);
+        box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
       }
       
       .back-btn:hover {
         background: #00ff00;
         color: #000;
-        box-shadow: 0 0 15px #00ff00;
-      }
-
-      canvas#background {
-        position: fixed;
-        top: 0;
-        left: 0;
-        z-index: 0;
+        box-shadow: 0 0 20px #00ff00;
+        transform: translateY(-2px);
       }
 
       .status-info {
-        margin-top: 15px;
-        font-size: 0.9rem;
-        opacity: 0.8;
+        margin-top: 20px;
+        font-size: 1rem;
+        opacity: 0.9;
         text-align: center;
         width: 100%;
-        max-width: 400px;
+        max-width: 500px;
         z-index: 1;
+        color: #b8f5d2;
+        padding: 15px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+        border: 1px solid rgba(0, 255, 0, 0.2);
       }
 
       .connected-status {
@@ -309,16 +386,41 @@
         font-weight: bold;
         margin-top: 10px;
         text-align: center;
+        padding: 15px;
+        border: 2px solid #00ff00;
+        border-radius: 12px;
+        background: rgba(0, 255, 0, 0.15);
+        box-shadow: 0 0 20px rgba(0, 255, 0, 0.4);
+        backdrop-filter: blur(5px);
+        animation: blink 2s infinite;
+      }
+
+      /* Christmas animations */
+      @keyframes snowFall {
+        0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(100vh) rotate(360deg); opacity: 0.5; }
+      }
+
+      @keyframes bellSwing {
+        0%, 100% { transform: rotate(-10deg); }
+        50% { transform: rotate(10deg); }
+      }
+
+      /* Footer */
+      footer {
+        text-align: center;
+        margin-top: 30px;
+        font-size: 0.9rem;
+        color: #00ff00;
+        z-index: 1;
+        text-shadow: 0 0 10px #00ff00;
         padding: 10px;
-        border: 1px solid #00ff00;
-        border-radius: 8px;
-        background: rgba(0, 255, 0, 0.1);
       }
 
       /* Responsive Design */
       @media (max-width: 1200px) {
         .stat-card {
-          min-width: 140px;
+          min-width: 150px;
         }
       }
 
@@ -328,16 +430,24 @@
         }
         
         .stat-card {
-          min-width: 130px;
-          padding: 12px;
+          min-width: 140px;
+          padding: 15px;
         }
         
         .stat-value {
-          font-size: 1.3rem;
+          font-size: 1.5rem;
         }
         
         .stat-label {
-          font-size: 0.8rem;
+          font-size: 0.85rem;
+        }
+        
+        h1 {
+          font-size: 2.2rem;
+        }
+        
+        h2 {
+          font-size: 1.2rem;
         }
       }
 
@@ -347,15 +457,86 @@
         }
         
         h1 {
+          font-size: 1.8rem;
+        }
+        
+        h2 {
+          font-size: 1.1rem;
+        }
+        
+        .merry-christmas {
+          font-size: 1.2rem;
+        }
+        
+        .stats-container {
+          max-width: 550px;
+          padding: 15px;
+        }
+        
+        .stats {
+          gap: 12px;
+        }
+        
+        .stat-card {
+          min-width: calc(50% - 12px);
+          max-width: calc(50% - 12px);
+          padding: 12px;
+        }
+        
+        .stat-value {
+          font-size: 1.3rem;
+          height: 40px;
+        }
+        
+        .stat-label {
+          font-size: 0.8rem;
+          height: 35px;
+        }
+        
+        #qr-container {
+          max-width: 300px;
+          padding: 20px;
+          min-height: 280px;
+        }
+        
+        #qr-wrapper {
+          max-width: 240px;
+        }
+        
+        .btn {
+          padding: 12px 20px;
+          font-size: 1rem;
+          max-width: 280px;
+        }
+        
+        .back-btn {
+          padding: 10px 20px;
+          font-size: 0.9rem;
+        }
+      }
+
+      @media (max-width: 576px) {
+        body {
+          padding: 10px;
+        }
+        
+        h1 {
           font-size: 1.6rem;
+          margin-bottom: 8px;
         }
         
         h2 {
           font-size: 1rem;
+          margin-bottom: 20px;
+        }
+        
+        .merry-christmas {
+          font-size: 1rem;
         }
         
         .stats-container {
-          max-width: 500px;
+          margin-bottom: 20px;
+          padding: 12px;
         }
         
         .stats {
@@ -363,8 +544,8 @@
         }
         
         .stat-card {
-          min-width: calc(50% - 20px);
-          max-width: calc(50% - 20px);
+          min-width: calc(50% - 10px);
+          max-width: calc(50% - 10px);
           padding: 10px;
         }
         
@@ -375,38 +556,37 @@
         
         .stat-label {
           font-size: 0.75rem;
-          height: 35px;
+          height: 30px;
         }
         
         #qr-container {
           max-width: 280px;
           padding: 15px;
+          min-height: 260px;
         }
         
         #qr-wrapper {
           max-width: 220px;
         }
+        
+        .btn {
+          padding: 12px;
+          font-size: 0.95rem;
+          max-width: 260px;
+        }
+        
+        .back-btn {
+          padding: 10px 18px;
+          font-size: 0.85rem;
+        }
+        
+        .status-info {
+          font-size: 0.9rem;
+          padding: 12px;
+        }
       }
 
-      @media (max-width: 576px) {
-        body {
-          padding: 10px;
-        }
-        
-        h1 {
-          font-size: 1.4rem;
-          margin-bottom: 8px;
-        }
-        
-        h2 {
-          font-size: 0.9rem;
-          margin-bottom: 15px;
-        }
-        
-        .stats-container {
-          margin-bottom: 15px;
-        }
-        
+      @media (max-width: 380px) {
         .stats {
           gap: 8px;
         }
@@ -419,63 +599,25 @@
         
         .stat-value {
           font-size: 1.1rem;
-          height: 32px;
+          height: 30px;
         }
         
         .stat-label {
           font-size: 0.7rem;
-          height: 32px;
-        }
-        
-        #qr-container {
-          max-width: 250px;
-          padding: 10px;
-          min-height: 250px;
-        }
-        
-        #qr-wrapper {
-          max-width: 200px;
-        }
-        
-        .btn {
-          padding: 10px;
-          font-size: 0.9rem;
-          max-width: 250px;
-        }
-        
-        .back-btn {
-          padding: 8px 15px;
-          font-size: 0.85rem;
-        }
-      }
-
-      @media (max-width: 380px) {
-        .stats {
-          gap: 6px;
-        }
-        
-        .stat-card {
-          min-width: calc(50% - 6px);
-          max-width: calc(50% - 6px);
-          padding: 6px;
-        }
-        
-        .stat-value {
-          font-size: 1rem;
-          height: 28px;
-        }
-        
-        .stat-label {
-          font-size: 0.65rem;
           height: 28px;
         }
         
         h1 {
-          font-size: 1.2rem;
+          font-size: 1.4rem;
         }
         
         #qr-container {
-          max-width: 220px;
+          max-width: 240px;
+          padding: 12px;
+        }
+        
+        #qr-wrapper {
+          max-width: 200px;
         }
       }
 
@@ -489,10 +631,16 @@
         
         .stats-container {
           margin-bottom: 15px;
+          padding: 10px;
         }
         
         .stat-card {
           padding: 8px;
+        }
+        
+        h1 {
+          margin-top: 10px;
+          font-size: 1.6rem;
         }
       }
     </style>
@@ -500,8 +648,12 @@
 
   <body>
     <canvas id="background"></canvas>
-    <h1>WhatsApp QR Pairing</h1>
-    <h2>Silent Wolf Dashboard</h2>
+    
+    <div class="christmas-header">
+      <h1>WhatsApp QR Pairing</h1>
+      <div class="merry-christmas">🎄 Silent Wolf Christmas Edition 🎅</div>
+      <h2>Scan the QR Code to Connect Your WhatsApp</h2>
+    </div>
 
     <!-- Statistics Container -->
     <div class="stats-container">
@@ -569,48 +721,258 @@
     </div>
 
     <div id="qr-container">
-      <p style="opacity: 0.7; margin-bottom: 10px;">Click below to generate QR</p>
+      <p style="opacity: 0.8; margin-bottom: 15px; color: #b8f5d2;">Click below to generate QR code</p>
+      <p style="font-size: 0.9rem; opacity: 0.7; color: #aefad6;">🎄 Scan with WhatsApp → Linked Devices 🎄</p>
     </div>
 
     <div id="status-info" class="status-info"></div>
 
-    <button class="btn" onclick="generateQR()">⚡ Generate QR Code</button>
+    <button class="btn" onclick="generateQR()">🎄 Generate QR Code</button>
     <a href="/" class="back-btn">⬅ Back to Home</a>
 
+    <footer>© 2025 Silent Wolf Automation | 🎄 Merry Christmas! 🎄</footer>
+
     <script>
-      // 🎇 Background animation
-      const canvas = document.getElementById('background');
-      const ctx = canvas.getContext('2d');
-      function resize() {
+      // 🎅 CHRISTMAS ANIMATED BACKGROUND
+      const canvas = document.getElementById("background");
+      const ctx = canvas.getContext("2d");
+
+      let particles = [];
+      const particleCount = 120;
+
+      function resizeCanvas() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
       }
-      window.addEventListener('resize', resize);
-      resize();
 
-      const particles = Array.from({ length: 80 }, () => ({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        r: Math.random() * 2 + 1,
-        dx: (Math.random() - 0.5) * 0.8,
-        dy: (Math.random() - 0.5) * 0.8,
-      }));
+      window.addEventListener("resize", resizeCanvas);
+      resizeCanvas();
 
+      // Particle types
+      const types = ['snow', 'bell', 'christmas-ball', 'star'];
+
+      // Colors for Christmas balls
+      const ballColors = ['#ff0000', '#00ff00', '#ffffff', '#ffd700', '#1e90ff', '#ff69b4'];
+
+      // Initialize particles
+      for (let i = 0; i < particleCount; i++) {
+        const type = types[Math.floor(Math.random() * types.length)];
+        const size = Math.random() * 6 + 2;
+        
+        particles.push({
+          type: type,
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          size: size,
+          speedX: (Math.random() - 0.5) * 1.5,
+          speedY: Math.random() * 0.8 + 0.3,
+          color: ballColors[Math.floor(Math.random() * ballColors.length)],
+          rotation: Math.random() * Math.PI * 2,
+          rotationSpeed: (Math.random() - 0.5) * 0.04,
+          swing: 0,
+          swingSpeed: Math.random() * 0.04 + 0.01,
+          swingDirection: Math.random() > 0.5 ? 1 : -1,
+          opacity: Math.random() * 0.5 + 0.5
+        });
+      }
+
+      // Draw different Christmas elements
+      function drawParticle(particle) {
+        ctx.save();
+        ctx.translate(particle.x, particle.y);
+        
+        if (particle.type === 'bell') {
+          // Draw jingle bell
+          ctx.rotate(particle.swing);
+          ctx.fillStyle = '#ffd700';
+          ctx.shadowColor = '#ffd700';
+          ctx.shadowBlur = 10;
+          
+          // Bell body
+          ctx.beginPath();
+          ctx.ellipse(0, 0, particle.size, particle.size * 1.5, 0, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Bell clapper
+          ctx.fillStyle = '#ff0000';
+          ctx.beginPath();
+          ctx.arc(0, particle.size * 1.2, particle.size * 0.3, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Bell top
+          ctx.fillStyle = '#ffd700';
+          ctx.beginPath();
+          ctx.arc(0, -particle.size * 1.2, particle.size * 0.6, 0, Math.PI * 2);
+          ctx.fill();
+          
+        } else if (particle.type === 'snow') {
+          // Draw snowflake
+          ctx.rotate(particle.rotation);
+          ctx.fillStyle = '#ffffff';
+          ctx.shadowColor = '#ffffff';
+          ctx.shadowBlur = 8;
+          
+          for (let i = 0; i < 6; i++) {
+            ctx.rotate(Math.PI / 3);
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(particle.size, 0);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(particle.size * 0.7, 0);
+            ctx.lineTo(particle.size * 0.7 + particle.size * 0.5, -particle.size * 0.3);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(particle.size * 0.7, 0);
+            ctx.lineTo(particle.size * 0.7 + particle.size * 0.5, particle.size * 0.3);
+            ctx.stroke();
+          }
+          
+        } else if (particle.type === 'christmas-ball') {
+          // Draw Christmas ball with shine
+          ctx.shadowColor = particle.color;
+          ctx.shadowBlur = 15;
+          
+          // Main ball
+          ctx.fillStyle = particle.color;
+          ctx.beginPath();
+          ctx.arc(0, 0, particle.size, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Shine effect
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+          ctx.beginPath();
+          ctx.arc(-particle.size * 0.3, -particle.size * 0.3, particle.size * 0.4, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Top hook
+          ctx.fillStyle = '#ffd700';
+          ctx.beginPath();
+          ctx.roundRect(-particle.size * 0.2, -particle.size * 1.2, particle.size * 0.4, particle.size * 0.4, 5);
+          ctx.fill();
+          
+        } else if (particle.type === 'star') {
+          // Draw star
+          ctx.rotate(particle.rotation);
+          ctx.fillStyle = '#ffd700';
+          ctx.shadowColor = '#ffd700';
+          ctx.shadowBlur = 12;
+          
+          drawStar(ctx, 0, 0, 5, particle.size, particle.size * 0.5);
+          ctx.fill();
+        }
+        
+        ctx.restore();
+      }
+
+      // Function to draw a star
+      function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
+        let rot = Math.PI / 2 * 3;
+        let x = cx;
+        let y = cy;
+        let step = Math.PI / spikes;
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - outerRadius);
+        
+        for (let i = 0; i < spikes; i++) {
+          x = cx + Math.cos(rot) * outerRadius;
+          y = cy + Math.sin(rot) * outerRadius;
+          ctx.lineTo(x, y);
+          rot += step;
+
+          x = cx + Math.cos(rot) * innerRadius;
+          y = cy + Math.sin(rot) * innerRadius;
+          ctx.lineTo(x, y);
+          rot += step;
+        }
+        
+        ctx.lineTo(cx, cy - outerRadius);
+        ctx.closePath();
+      }
+
+      // Animation loop
       function animate() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#00ff00';
+        
+        // Add subtle gradient background
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, 'rgba(10, 20, 15, 0.1)');
+        gradient.addColorStop(1, 'rgba(5, 10, 7, 0.3)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Update and draw particles
         particles.forEach((p) => {
-          p.x += p.dx;
-          p.y += p.dy;
-          if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
-          if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-          ctx.fill();
+          drawParticle(p);
+          
+          // Update position
+          p.x += p.speedX;
+          p.y += p.speedY;
+          
+          // Update rotation
+          p.rotation += p.rotationSpeed;
+          
+          // Update bell swing
+          if (p.type === 'bell') {
+            p.swing += p.swingSpeed * p.swingDirection;
+            if (Math.abs(p.swing) > 0.5) {
+              p.swingDirection *= -1;
+            }
+          }
+          
+          // Wrap around edges
+          if (p.x < -p.size) p.x = canvas.width + p.size;
+          if (p.x > canvas.width + p.size) p.x = -p.size;
+          if (p.y < -p.size) p.y = canvas.height + p.size;
+          if (p.y > canvas.height + p.size) p.y = -p.size;
+          
+          // Add some randomness to movement
+          p.speedX += (Math.random() - 0.5) * 0.03;
+          p.speedY += (Math.random() - 0.5) * 0.03;
+          
+          // Limit speed
+          const maxSpeed = 2;
+          p.speedX = Math.max(-maxSpeed, Math.min(maxSpeed, p.speedX));
+          p.speedY = Math.max(-maxSpeed, Math.min(maxSpeed, p.speedY));
         });
+        
+        // Draw some connecting lines between nearby particles
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < 100) {
+              ctx.beginPath();
+              ctx.strokeStyle = `rgba(0, 255, 0, ${0.08 * (1 - distance / 100)})`;
+              ctx.lineWidth = 0.5;
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.stroke();
+            }
+          }
+        }
+        
         requestAnimationFrame(animate);
       }
+
+      // Start animation
       animate();
+
+      // Add occasional "jingle" visual effect
+      setInterval(() => {
+        const bells = particles.filter(p => p.type === 'bell');
+        if (bells.length > 0) {
+          const bell = bells[Math.floor(Math.random() * bells.length)];
+          bell.swingSpeed = Math.random() * 0.08 + 0.02;
+        }
+      }, 3000);
 
       // 📊 Statistics Management
       let stats = {
@@ -765,9 +1127,9 @@
 
           if (data.status === 'connected') {
             stopPolling();
-            container.innerHTML = `<div class="connected-status">✅ WhatsApp session <b>${sessionId}</b> is connected!</div>`;
-            statusInfo.textContent = `Session ${sessionId} is active.`;
-            button.textContent = '⚡ Generate QR Code';
+            container.innerHTML = `<div class="connected-status">✅ WhatsApp session <b>${sessionId}</b> is connected! 🎄</div>`;
+            statusInfo.textContent = `Session ${sessionId} is active and ready to use.`;
+            button.textContent = '🎄 Generate QR Code';
             button.disabled = false;
             
             // Update stats
@@ -794,16 +1156,16 @@
             statusInfo.textContent = `🔄 Waiting... (${data.status})`;
           } else {
             stopPolling();
-            container.innerHTML = `<p style="color:red;">❌ Session closed. Click Generate QR to restart.</p>`;
+            container.innerHTML = `<p style="color:#ff4444; text-shadow: 0 0 10px #ff0000;">❌ Session closed. Click Generate QR to restart.</p>`;
             statusInfo.textContent = `Session ${sessionId} inactive.`;
-            button.textContent = '⚡ Generate QR Code';
+            button.textContent = '🎄 Generate QR Code';
             button.disabled = false;
           }
         } catch (error) {
           stopPolling();
-          container.innerHTML = '<p style="color:red;">❌ Error connecting to server.</p>';
+          container.innerHTML = '<p style="color:#ff4444; text-shadow: 0 0 10px #ff0000;">❌ Error connecting to server.</p>';
           statusInfo.textContent = 'Ensure backend is running on port 5000.';
-          button.textContent = '⚡ Generate QR Code';
+          button.textContent = '🎄 Generate QR Code';
           button.disabled = false;
         }
       }
@@ -812,7 +1174,7 @@
         const sessionId = sessionIdInput.value.trim() || 'default';
         stopPolling();
         container.innerHTML = '<div id="loader"></div>';
-        statusInfo.textContent = `Initializing ${sessionId}...`;
+        statusInfo.textContent = `🎄 Initializing ${sessionId}...`;
         button.textContent = '⏳ Initializing...';
         button.disabled = true;
         
@@ -834,9 +1196,9 @@
             fetchStatus(sessionId);
           }
         } catch {
-          container.innerHTML = '<p style="color:red;">❌ Failed to contact server API.</p>';
+          container.innerHTML = '<p style="color:#ff4444; text-shadow: 0 0 10px #ff0000;">❌ Failed to contact server API.</p>';
           statusInfo.textContent = 'Verify server on localhost:5000.';
-          button.textContent = '⚡ Generate QR Code';
+          button.textContent = '🎄 Generate QR Code';
           button.disabled = false;
           
           // Reset stats
@@ -852,15 +1214,15 @@
           const res = await fetch(`${API_URL}/status/${sessionId}`);
           const data = await res.json();
           if (data.status === 'connected') {
-            container.innerHTML = `<div class="connected-status">✅ WhatsApp session <b>${sessionId}</b> is already connected!</div>`;
+            container.innerHTML = `<div class="connected-status">✅ WhatsApp session <b>${sessionId}</b> is already connected! 🎄</div>`;
             statusInfo.textContent = `Session ${sessionId} active.`;
             stats.botStatus = 'Online';
             startUptimeCounter();
           } else {
-            statusInfo.textContent = `Session ${sessionId} idle. Click Generate QR to begin.`;
+            statusInfo.textContent = `🎄 Session ${sessionId} idle. Click Generate QR to begin.`;
           }
         } catch {
-          statusInfo.textContent = `Server not reachable. Check backend.`;
+          statusInfo.textContent = `🎄 Server not reachable. Check backend.`;
         }
         
         // Load initial stats
