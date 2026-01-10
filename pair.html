@@ -3,21 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dave-sessions Pair Dashboard</title>
+  <title>WOLFBOT Pair Dashboard</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
-    /* Your CSS remains exactly the same */
     :root {
-      --primary: linear-gradient(135deg, #FF4500, #228B22);
-      --bg: #D2691E;
-      --glass: rgba(255, 255, 255, 0.05);
+      --primary: #00ff00;
+      --secondary: #004d00;
+      --bg: #000000;
+      --glass: rgba(0, 255, 0, 0.03);
       --text: #ffffff;
-      --muted: #708090;
-      --highlight: #FF1493;
+      --muted: #00aa00;
+      --highlight: #00ff00;
       --radius: 16px;
       --blur: 12px;
       --transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-      --glow: 0 0 15px rgba(0, 212, 255, 0.3);
+      --glow: 0 0 15px rgba(0, 255, 0, 0.3);
     }
 
     * {
@@ -27,7 +28,7 @@
     }
 
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'JetBrains Mono', monospace;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -36,18 +37,44 @@
       overflow-x: hidden;
       color: var(--text);
       padding: 80px 20px 120px;
+      background: var(--bg);
     }
 
-    .background-image {
+    /* Animated green dots background */
+    .bg-dots {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      object-fit: cover;
-      z-index: -3;
-      filter: blur(8px) brightness(0.6);
-      transform: scale(1.1);
+      z-index: -1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .dot {
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      background-color: var(--primary);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--primary), 0 0 20px var(--primary);
+      opacity: 0.6;
+    }
+
+    @keyframes float {
+      0%, 100% {
+        transform: translate(0, 0);
+      }
+      25% {
+        transform: translate(100px, -50px);
+      }
+      50% {
+        transform: translate(-50px, 100px);
+      }
+      75% {
+        transform: translate(-100px, -30px);
+      }
     }
 
     .header {
@@ -59,10 +86,10 @@
       justify-content: space-between;
       align-items: center;
       padding: 1rem 2rem;
-      background: var(--glass);
+      background: rgba(0, 0, 0, 0.7);
       backdrop-filter: blur(var(--blur));
       z-index: 100;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid rgba(0, 255, 0, 0.2);
     }
 
     .logo-container {
@@ -76,28 +103,33 @@
       width: 40px;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid rgba(0, 212, 255, 0.3);
+      border: 2px solid rgba(0, 255, 0, 0.3);
       box-shadow: var(--glow);
     }
 
     .logo-text {
+      font-family: 'Orbitron', sans-serif;
       font-size: 1.5rem;
       font-weight: 700;
-      background: var(--primary);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: var(--primary);
       text-shadow: var(--glow);
     }
 
     .battery-container {
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0, 255, 0, 0.05);
       border-radius: 50px;
       padding: 0.5rem 1rem;
       display: flex;
       align-items: center;
       gap: 0.7rem;
       font-size: 0.9rem;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(0, 255, 0, 0.2);
+      transition: var(--transition);
+    }
+
+    .battery-container:hover {
+      background: rgba(0, 255, 0, 0.1);
+      box-shadow: var(--glow);
     }
 
     .battery-icon {
@@ -116,27 +148,28 @@
     }
 
     .box {
-      background: var(--glass);
+      background: rgba(0, 255, 0, 0.05);
       backdrop-filter: blur(var(--blur));
       border-radius: var(--radius);
       padding: 2rem;
       text-align: center;
       box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(0, 255, 0, 0.1);
       transition: var(--transition);
     }
 
     .box:hover {
       transform: translateY(-5px);
       box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5), var(--glow);
+      border-color: rgba(0, 255, 0, 0.3);
+      background: rgba(0, 255, 0, 0.08);
     }
 
     .box h2 {
+      font-family: 'Orbitron', sans-serif;
       font-size: 1.8rem;
       margin-bottom: 1rem;
-      background: var(--primary);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: var(--primary);
       text-shadow: var(--glow);
     }
 
@@ -156,8 +189,8 @@
       flex: 1;
       padding: 1rem;
       border-radius: var(--radius);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(0, 255, 0, 0.2);
+      background: rgba(0, 0, 0, 0.5);
       color: var(--text);
       font-family: inherit;
       transition: var(--transition);
@@ -166,23 +199,25 @@
     .input-container input:focus {
       outline: none;
       border-color: var(--highlight);
-      box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2);
+      box-shadow: 0 0 0 2px rgba(0, 255, 0, 0.2);
     }
 
     .input-container button {
       padding: 1rem 1.5rem;
-      background: var(--primary);
+      background: rgba(0, 255, 0, 0.1);
       color: white;
-      border: none;
+      border: 1px solid var(--highlight);
       border-radius: var(--radius);
       font-weight: 600;
       cursor: pointer;
       transition: var(--transition);
+      font-family: 'JetBrains Mono', monospace;
     }
 
     .input-container button:hover {
       transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      background: rgba(0, 255, 0, 0.2);
+      box-shadow: var(--glow);
     }
 
     #pair-result {
@@ -190,7 +225,7 @@
       padding: 1rem;
       border-radius: var(--radius);
       background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(0, 255, 0, 0.1);
       min-height: 60px;
       display: flex;
       align-items: center;
@@ -198,7 +233,7 @@
     }
 
     #copy-code {
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0, 255, 0, 0.1);
       border: 1px solid var(--highlight);
       padding: 0.6rem 1.2rem;
       border-radius: 50px;
@@ -208,31 +243,41 @@
       transition: var(--transition);
       margin-top: 1rem;
       display: none;
+      font-family: 'JetBrains Mono', monospace;
     }
 
     #copy-code:hover {
-      background: rgba(0, 212, 255, 0.1);
-      box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+      background: rgba(0, 255, 0, 0.2);
+      box-shadow: var(--glow);
+      transform: scale(1.05);
     }
 
     .music-player {
       width: 100%;
       max-width: 500px;
-      background: var(--glass);
+      background: rgba(0, 255, 0, 0.05);
       backdrop-filter: blur(var(--blur));
       border-radius: var(--radius);
       padding: 1.5rem;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(0, 255, 0, 0.1);
       z-index: 90;
       text-align: center;
       margin-top: 2rem;
+      transition: var(--transition);
+    }
+
+    .music-player:hover {
+      border-color: rgba(0, 255, 0, 0.3);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5), var(--glow);
     }
 
     .music-player h3 {
       color: var(--highlight);
       margin-bottom: 0.5rem;
       font-size: 1.2rem;
+      font-family: 'Orbitron', sans-serif;
+      text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
     }
 
     .music-title {
@@ -248,8 +293,8 @@
     }
 
     .play-btn {
-      background: var(--primary);
-      border: none;
+      background: rgba(0, 255, 0, 0.1);
+      border: 1px solid var(--highlight);
       border-radius: 50%;
       width: 50px;
       height: 50px;
@@ -264,10 +309,12 @@
 
     .play-btn:hover {
       transform: scale(1.1);
+      background: rgba(0, 255, 0, 0.2);
+      box-shadow: var(--glow);
     }
 
     .play-btn i {
-      color: white;
+      color: var(--highlight);
       font-size: 1.5rem;
     }
 
@@ -305,12 +352,13 @@
   </style>
 </head>
 <body>
-  <img src="https://files.catbox.moe/lidsgj.jpg" alt="makamesco Background" class="background-image">
+  <!-- Animated green dots background -->
+  <div class="bg-dots" id="bgDots"></div>
 
   <header class="header">
     <div class="logo-container">
-      <img src="https://files.catbox.moe/lidsgj.jpg" alt="makamesco Logo" class="logo-img">
-      <div class="logo-text">Dave tech</div>
+      <img src="https://files.catbox.moe/lidsgj.jpg" alt="WOLFBOT Logo" class="logo-img">
+      <div class="logo-text">WOLFBOT</div>
     </div>
 
     <div class="battery-container">
@@ -322,7 +370,7 @@
   <div class="main-content">
     <div class="box">
       <h2>PAIRING CODE</h2>
-      <h5>DAVE MD MULTI DEVICE </h5>
+      <h5>WOLFBOT</h5>
       <p>Please enter your number with country code</p>
 
       <div class="input-container">
@@ -339,8 +387,8 @@
 
     <div class="music-player">
       <h3>PLAY NOW</h3>
-      <div class="music-title">Dave Song</div>
-      <div class="music-subtitle">by Dev Dave Enjoy</div>
+      <div class="music-title">WOLFBOT Song</div>
+      <div class="music-subtitle">by Dev WOLFBOT Enjoy</div>
       <button class="play-btn" onclick="togglePlay()">
         <i class="fas fa-play" id="play-icon"></i>
       </button>
@@ -352,6 +400,37 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"></script>
   <script>
+    // Create animated green dots
+    function createFloatingDots() {
+      const container = document.getElementById('bgDots');
+      const dotCount = 40;
+      
+      for (let i = 0; i < dotCount; i++) {
+        const dot = document.createElement('div');
+        dot.classList.add('dot');
+        
+        // Random position
+        const x = Math.random() * 100;
+        const y = Math.random() * 100;
+        
+        // Random size
+        const size = Math.random() * 4 + 2;
+        
+        // Random animation duration and delay
+        const duration = Math.random() * 20 + 20;
+        const delay = Math.random() * 5;
+        
+        dot.style.left = `${x}%`;
+        dot.style.top = `${y}%`;
+        dot.style.width = `${size}px`;
+        dot.style.height = `${size}px`;
+        dot.style.animation = `float ${duration}s infinite ${delay}s`;
+        dot.style.opacity = Math.random() * 0.4 + 0.2;
+        
+        container.appendChild(dot);
+      }
+    }
+
     const pairResult = document.getElementById("pair-result");
     const submitBtn = document.getElementById("submit");
     const numberInput = document.getElementById("number");
@@ -368,12 +447,14 @@
       try {
         await navigator.clipboard.writeText(code);
         copyCodeBtn.innerText = "COPIED!";
-        copyCodeBtn.style.backgroundColor = "#00ff00";
+        copyCodeBtn.style.backgroundColor = "var(--primary)";
         copyCodeBtn.style.color = "#000";
+        copyCodeBtn.style.boxShadow = "0 0 20px var(--primary)";
         setTimeout(() => {
           copyCodeBtn.innerText = "COPY CODE";
           copyCodeBtn.style.backgroundColor = "";
           copyCodeBtn.style.color = "";
+          copyCodeBtn.style.boxShadow = "";
         }, 2000);
       } catch (err) {
         console.error('Failed to copy: ', err);
@@ -410,7 +491,7 @@
 
         pairResult.innerHTML = `
           <p style="color:var(--highlight); font-weight:bold; font-size:1.2rem;">
-            CODE: <span style="color:white">${code}</span>
+            CODE: <span style="color:white; text-shadow: 0 0 10px var(--primary);">${code}</span>
           </p>
         `;
         copyCodeBtn.style.display = "inline-block";
@@ -453,7 +534,7 @@
 
     audio.addEventListener('timeupdate', updateTimeDisplay);
 
-    // Simulate battery status (since Battery API is deprecated)
+    // Simulate battery status
     function updateBattery() {
       // Simulate battery level between 70-100%
       const batteryPercent = Math.floor(Math.random() * 30) + 70;
@@ -472,6 +553,8 @@
     window.addEventListener('load', () => {
       copyCodeBtn.style.display = "none";
       updateBattery();
+      createFloatingDots();
+      
       // Update battery every minute
       setInterval(updateBattery, 60000);
 

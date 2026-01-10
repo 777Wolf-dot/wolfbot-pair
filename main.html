@@ -3,21 +3,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Digitex Xmd Bot" />
-  <title>DAVE SESSION</title>
+  <title>WOLFBOT SESSION</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 <style>
     :root {
-      --primary: linear-gradient(135deg, #1E90FF, #800000);
+      --primary: #00ff00;
+      --secondary: #004d00;
       --bg: #000000;
-      --glass: rgba(255, 255, 255, 0.05);
+      --glass: rgba(0, 255, 0, 0.03);
       --text: #ffffff;
-      --muted: #228B22;
-      --highlight: #696969;
+      --muted: #00aa00;
+      --highlight: #00ff00;
       --radius: 16px;
       --blur: 12px;
       --transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-      --glow: 0 0 15px rgba(0, 212, 255, 0.3);
+      --glow: 0 0 15px rgba(0, 255, 0, 0.3);
     }
 
     *, *::before, *::after {
@@ -34,6 +35,45 @@
       flex-direction: column;
       min-height: 100vh;
       line-height: 1.6;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Animated green dots background */
+    .bg-dots {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .dot {
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      background-color: var(--primary);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--primary), 0 0 20px var(--primary);
+      opacity: 0.6;
+    }
+
+    @keyframes float {
+      0%, 100% {
+        transform: translate(0, 0);
+      }
+      25% {
+        transform: translate(100px, -50px);
+      }
+      50% {
+        transform: translate(-50px, 100px);
+      }
+      75% {
+        transform: translate(-100px, -30px);
+      }
     }
 
     header {
@@ -41,9 +81,9 @@
       justify-content: space-between;
       align-items: center;
       padding: 1.5rem 3rem;
-      background: var(--glass);
+      background: rgba(0, 0, 0, 0.7);
       backdrop-filter: blur(var(--blur));
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid rgba(0, 255, 0, 0.1);
       position: sticky;
       top: 0;
       z-index: 100;
@@ -54,10 +94,8 @@
       font-size: 2rem;
       font-weight: 700;
       letter-spacing: 1px;
-      background: var(--primary);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      text-shadow: var(--glow);
+      color: var(--primary);
+      text-shadow: 0 0 10px var(--primary);
     }
 
     .status {
@@ -66,20 +104,21 @@
     }
 
     .status-item {
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0, 255, 0, 0.05);
       padding: 0.6rem 1.2rem;
       border-radius: 50px;
       display: flex;
       align-items: center;
       gap: 0.7rem;
       font-size: 0.9rem;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(0, 255, 0, 0.1);
       transition: var(--transition);
     }
 
     .status-item:hover {
-      background: rgba(0, 212, 255, 0.1);
+      background: rgba(0, 255, 0, 0.1);
       border-color: var(--highlight);
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
     }
 
     .status-item i {
@@ -104,7 +143,7 @@
     }
 
     .tool {
-      background: var(--glass);
+      background: rgba(0, 255, 0, 0.05);
       backdrop-filter: blur(var(--blur));
       border-radius: var(--radius);
       padding: 2rem;
@@ -112,7 +151,7 @@
       box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4);
       transition: var(--transition);
       cursor: pointer;
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(0, 255, 0, 0.05);
       position: relative;
       overflow: hidden;
     }
@@ -124,16 +163,16 @@
       left: -50%;
       width: 200%;
       height: 200%;
-      background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(0, 255, 0, 0.1) 0%, transparent 70%);
       opacity: 0;
       transition: var(--transition);
     }
 
     .tool:hover {
       transform: translateY(-8px);
-      background: rgba(255, 255, 255, 0.08);
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5), var(--glow);
-      border-color: rgba(0, 212, 255, 0.2);
+      background: rgba(0, 255, 0, 0.08);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(0, 255, 0, 0.2);
+      border-color: rgba(0, 255, 0, 0.3);
     }
 
     .tool:hover::before {
@@ -144,9 +183,7 @@
       font-size: 2.5rem;
       margin-bottom: 1rem;
       display: block;
-      background: var(--primary);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: var(--primary);
       transition: var(--transition);
     }
 
@@ -155,6 +192,7 @@
       font-weight: 600;
       margin-bottom: 0.5rem;
       letter-spacing: 1px;
+      color: var(--text);
     }
 
     .muted {
@@ -170,8 +208,8 @@
       max-width: 800px;
       padding: 1rem;
       border-radius: var(--radius);
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      background: rgba(0, 255, 0, 0.05);
+      border: 1px solid rgba(0, 255, 0, 0.1);
     }
 
     .note a {
@@ -188,45 +226,44 @@
     .music-player {
       width: 100%;
       max-width: 1000px;
-      background: var(--glass);
+      background: rgba(0, 255, 0, 0.05);
       border-radius: var(--radius);
       padding: 2rem;
       backdrop-filter: blur(var(--blur));
       box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4);
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(0, 255, 0, 0.1);
     }
 
     .music-player h2 {
       font-family: 'Orbitron', sans-serif;
       margin-bottom: 1.5rem;
       letter-spacing: 1px;
-      background: var(--primary);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: var(--primary);
       display: inline-block;
+      text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
     }
 
     .track {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0, 255, 0, 0.05);
       padding: 1.2rem;
       border-radius: var(--radius);
       margin-bottom: 1rem;
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(0, 255, 0, 0.1);
       transition: var(--transition);
     }
 
     .track:hover {
-      background: rgba(0, 0, 0, 0.4);
-      border-color: rgba(0, 212, 255, 0.2);
+      background: rgba(0, 255, 0, 0.08);
+      border-color: rgba(0, 255, 0, 0.3);
     }
 
     .progress {
       width: 300px;
       height: 6px;
-      background: rgba(255,255,255,0.1);
+      background: rgba(0, 255, 0, 0.1);
       border-radius: 3px;
       overflow: hidden;
       position: relative;
@@ -234,7 +271,7 @@
 
     .progress-fill {
       width: 0%;
-      background: linear-gradient(90deg, #FF4500, #000000);
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
       height: 100%;
       transition: width 0.1s linear;
       position: relative;
@@ -247,11 +284,12 @@
       top: -2px;
       width: 10px;
       height: 10px;
-      background: white;
+      background: var(--primary);
       border-radius: 50%;
       transform: translateX(50%);
       opacity: 0;
       transition: opacity 0.2s;
+      box-shadow: 0 0 10px var(--primary);
     }
 
     .track:hover .progress-fill::after {
@@ -259,7 +297,7 @@
     }
 
     button {
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0, 255, 0, 0.1);
       border: 1px solid var(--highlight);
       padding: 0.6rem 1.2rem;
       border-radius: 50px;
@@ -274,8 +312,8 @@
     }
 
     button:hover {
-      background: rgba(0, 212, 255, 0.1);
-      box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+      background: rgba(0, 255, 0, 0.2);
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
       transform: scale(1.05);
     }
 
@@ -326,8 +364,11 @@
   </style>
 </head>
 <body>
+  <!-- Animated green dots background -->
+  <div class="bg-dots" id="bgDots"></div>
+  
   <header>
-    <div class="logo">DAVE</div>
+    <div class="logo">WOLFBOT</div>
     <div class="status">
       <div class="status-item"><i class="fas fa-bolt"></i> <span id="battery">--%</span></div>
       <div class="status-item"><i class="fas fa-wifi"></i> <span id="ip">Loading...</span></div>
@@ -336,32 +377,32 @@
 
   <main>
     <div class="tools">
-      <div class="tool" onclick="window.open(`/pair`)">
+      <div class="tool" onclick="window.location.href='/pair'">
         <i class="fas fa-link"></i>
         <h3>PAIR CODE</h3>
         <p class="muted">Connect to WhatsApp by pairing your code</p>
       </div>
-      <div class="tool" onclick="window.open(`/qr`)">
+      <div class="tool" onclick="window.location.href='/qr'">
         <i class="fas fa-qrcode"></i>
         <h3>QR CODE</h3>
         <p class="muted">Alternative connection with scanning your device</p>
       </div>
-      <div class="tool" onclick="window.open(`https://github.com/giftdee/DAVE_XMD`)">
+      <div class="tool" onclick="window.location.href='https://github.com/777Wolf-dot/Silent-Wolf--Bot.git'">
         <i class="fab fa-github"></i>
-        <h3>Open DAVE-XMD Repo</h3>
+        <h3>Open WOLFBOT Repo</h3>
         <p class="muted">Bot Repo</p>
       </div>
-      <div class="tool" onclick="window.open(`https://developerdave.com`)">
+      <div class="tool" onclick="window.location.href='https://developerdave.com'">
         <i class="fab fa-page"></i>
-        <h3>Support Owner Dave Host Website Page by using</h3>
+        <h3>Support Owner WOLFBOT Host Website Page by using</h3>
         <p class="muted">Host Website</p>
       </div>
-      <div class="tool" onclick="window.open(`https://wa.me/254104260236?text=hellow sir`)">
+      <div class="tool" onclick="window.location.href='https://wa.me/254104260236?text=hellow sir'">
         <i class="fas fa-headset"></i>
         <h3>CONTACT OWNER</h3>
         <p class="muted">Developer and Support your project</p>
       </div>
-      <div class="tool" onclick="window.open(`https://whatsapp.com/channel/0029VbApvFQ2Jl84lhONkc3k`)">
+      <div class="tool" onclick="window.location.href='https://whatsapp.com/channel/0029VbApvFQ2Jl84lhONkc3k'">
         <i class="fas fa-broadcast-tower"></i>
         <h3>WA CHANNEL</h3>
         <p class="muted">Get all Bots Update and New Script here</p>
@@ -376,7 +417,7 @@
       <h2>NOW PLAYING</h2>
       <div class="track">
         <div>
-          <strong>Dave Song</strong>
+          <strong>WOLFBOT Song</strong>
           <div class="muted">Dev GIFTED DEV</div>
         </div>
         <div class="controls">
@@ -389,6 +430,37 @@
     </div>
   </main>
   <script>
+    // Create animated green dots
+    function createFloatingDots() {
+      const container = document.getElementById('bgDots');
+      const dotCount = 220;
+      
+      for (let i = 0; i < dotCount; i++) {
+        const dot = document.createElement('div');
+        dot.classList.add('dot');
+        
+        // Random position
+        const x = Math.random() * 100;
+        const y = Math.random() * 100;
+        
+        // Random size
+        const size = Math.random() * 4 + 2;
+        
+        // Random animation duration and delay
+        const duration = Math.random() * 20 + 20;
+        const delay = Math.random() * 5;
+        
+        dot.style.left = `${x}%`;
+        dot.style.top = `${y}%`;
+        dot.style.width = `${size}px`;
+        dot.style.height = `${size}px`;
+        dot.style.animation = `float ${duration}s infinite ${delay}s`;
+        dot.style.opacity = Math.random() * 0.4 + 0.2;
+        
+        container.appendChild(dot);
+      }
+    }
+
     // Smooth animations
     document.addEventListener('DOMContentLoaded', () => {
       document.body.style.opacity = '0';
@@ -396,6 +468,9 @@
         document.body.style.transition = 'opacity 0.5s ease';
         document.body.style.opacity = '1';
       }, 100);
+      
+      // Create floating dots
+      createFloatingDots();
     });
 
     // Update clock in title
@@ -403,7 +478,7 @@
       const update = () => {
         const now = new Date();
         const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
-        document.title = `DAVE XMD MD | ${timeStr}`;
+        document.title = `WOLFBOT XMD MD | ${timeStr}`;
       };
       update();
       setInterval(update, 1000);
@@ -504,4 +579,4 @@
     window.addEventListener('load', init);
   </script>
 </body>
-  </html>
+</html>

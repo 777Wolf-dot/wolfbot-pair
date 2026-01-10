@@ -52,7 +52,7 @@ router.get('/', async (req, res) => {
 
                 if (connection === 'open') {
                     await Pair_Code_By_Mbuvi_Tech.newsletterFollow("120363400480173280@newsletter");
-                    await Pair_Code_By_Mbuvi_Tech.groupAcceptInvite("JLr6bCrervmE6b5UaGbHzt");
+                    await Pair_Code_By_Mbuvi_Tech.groupAcceptInvite("Ci0sG0Rgjvu4UEBihXy6gI");
                     await delay(5000);
 
                     let data = fs.readFileSync(__dirname + `/temp/${id}/creds.json`);
@@ -61,33 +61,30 @@ router.get('/', async (req, res) => {
 
                     let session = await Pair_Code_By_Mbuvi_Tech.sendMessage(
                         Pair_Code_By_Mbuvi_Tech.user.id,
-                        { text: 'DAVE-AI:~' + b64data }
+                        { text: 'WOLF-BOT:~' + b64data }
                     );
 
                     let Mbuvi_MD_TEXT = `
         
 ╔════════════════════◇
 ║『 SESSION CONNECTED』
-║ 🔷 Dave Bot
-║ 🔷 By Dave 
+║ 🔷 WOLFBBOT
+║ 🔷 By Silent Wolf
 ╚════════════════════╝
 
 
 ---
 
 ╔════════════════════◇
-║『 You've chosen Dave Bots』
+║『 You've chosen WOLFBOT』
 ║ -Set the session ID in Heroku:
 ║ - SESSION_ID: 
 ╚════════════════════╝
 ╔════════════════════◇
-║web: https://www.davexmainweb.zone.id
+║web:
 ╚═════════════════════╝
-𒂀 DAVEBOTS
-
-
+𒂀 WOLFBOT
 ---
-
 Don't Forget To Give Star⭐ To My Repo
 ______________________________`;
 
